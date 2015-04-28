@@ -11,8 +11,6 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/surface/concave_hull.h>
 #include <pcl/octree/octree_impl.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/io/vtk_io.h>
 
 namespace EXX{
 
@@ -34,10 +32,6 @@ namespace EXX{
 	}
 
 	PointCloudT::Ptr compression::superVoxelClustering_s(PointCloudT::Ptr cloud, densityDescriptor &dDesc){
-
-		// std::cout << "seed" << dDesc.seed_res << std::endl;
-		// std::cout << "voxel" << dDesc.voxel_res << std::endl;
-		// std::cout << "" << std::endl;
 
 		pcl::SupervoxelClustering<PointT> super (dDesc.voxel_res, dDesc.seed_res, false);
 		super.setColorImportance (sv_color_imp_);
@@ -175,7 +169,6 @@ namespace EXX{
 	}
 
 	void compression::projectToPlaneS(PointCloudT::Ptr cloud, Eigen::Vector4d coeff){
-		std::cout << "reyna ap breyta í coeffs" << std::endl;
 		pcl::ModelCoefficients::Ptr m_coeff (new pcl::ModelCoefficients ());
 		m_coeff->values.resize (4);
 		m_coeff->values[0] = float(coeff(0));
@@ -183,7 +176,6 @@ namespace EXX{
 		m_coeff->values[2] = float(coeff(2));
 		m_coeff->values[3] = float(coeff(3));
 		compression::projectToPlaneS(cloud, m_coeff);
-		std::cout << "virkaði" << std::endl;
 	}	
 
 	void compression::projectToPlaneS(PointCloudT::Ptr cloud, ModelCoeffT::Ptr coeff){
@@ -336,16 +328,7 @@ namespace EXX{
 			dens.voxel_res = std::min( std::max( std::min( x, y ) / 10.0f * pRatio * pRatio, v_leaf_size_), sv_voxel_res_ );
 			dens.seed_res = std::min( 2.0f * dens.voxel_res, sv_seed_res_ );
 			dens.rw_max_dist = std::min( dens.voxel_res / 1.5f, rw_hull_max_dist_ );
-
-			std::cout << "blahh " << utils::l2_norm(dens.seed_res) << std::endl;
 			dens.gp3_search_rad = std::min( 2.0f * utils::l2_norm(dens.seed_res), gp3_search_rad_ );
-			
-			std::cout << "voxel " << dens.voxel_res << std::endl;
-			std::cout << "seed " << dens.seed_res << std::endl;
-			std::cout << "rw " << dens.rw_max_dist << std::endl;
-			std::cout << "gp3 " << dens.gp3_search_rad << std::endl;
-			std::cout << "" << std::endl;
-
 			dDesc.push_back( dens );
 		}
 
@@ -369,6 +352,13 @@ namespace EXX{
 			(*cm).push_back( compression::greedyProjectionTriangulation_s( tmp_cloud, dDesc[i].gp3_search_rad ));
 		}
 		(*cm).push_back( compression::greedyProjectionTriangulation_s( nonPlanar, utils::l2_norm(v_leaf_size_) * 1.5f ));
+	}
+
+	void compression::greedyProjectionTriangulationPlanes(PointCloudT::Ptr nonPlanar, vPointCloudT &planes_hulls, std::vector<cloudMesh> &cm,std::vector<densityDescriptor> &dDesc){
+		for (size_t i = 0; i < planes_hulls.size(); ++i){
+			cm.push_back( compression::greedyProjectionTriangulation_s( planes_hulls[i], dDesc[i].gp3_search_rad ));
+		}
+		cm.push_back( compression::greedyProjectionTriangulation_s( nonPlanar, utils::l2_norm(v_leaf_size_) * 1.5f ));
 	}
 
 	cloudMesh compression::greedyProjectionTriangulation_s(PointCloudT::Ptr cloud, float gp3_rad){
@@ -439,7 +429,6 @@ namespace EXX{
 					}
 				}
 			}
-			std::cout << "going to range for" << std::endl;
 			std::sort(polys.begin(), polys.end(), std::greater<int>());
 			for ( auto j : polys ){
 				cm[i].mesh.polygons.erase(cm[i].mesh.polygons.begin() + j);
@@ -510,22 +499,5 @@ namespace EXX{
 		// std::cout << "super" << std::endl;
 		// compression::greedyProjectionTriangulationPlanes();
 		// std::cout << "triangulation" << std::endl;
-	}
-
-
-	void compression::savePCD(PointCloudT::Ptr cloud, std::string name){
-		pcl::io::savePCDFileASCII (name + ".pcd", *cloud);
-	}
-
-	void compression::savePCD(std::vector<PointCloudT::Ptr> cloud, std::string name){
-		PointCloudT::Ptr tmp_cloud (new PointCloudT ());
-		for (size_t i = 0; i < cloud.size(); i++){
-			*tmp_cloud += *(cloud.at(i));
-		}
-		pcl::io::savePCDFileASCII (name + ".pcd", *tmp_cloud);
-	}
-
-	void compression::saveVTK(pcl::PolygonMesh mesh, std::string name){
-		pcl::io::saveVTKFile (name + ".vtk", mesh);
 	}
 }

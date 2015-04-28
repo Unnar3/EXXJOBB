@@ -1,0 +1,26 @@
+{
+
+# Compression class params
+VoxelLeafSize           : 0.02,
+SVVoxelResolution       : 0.05,
+SVSeedResolution        : 0.1,
+SVColorImportance       : 0.1,
+SVSpatialImportance     : 5.0,
+RANSACDistanceThreshold : 0.08,
+RANSACMinInliers        : 200,
+RWHullMaxDist           : 0.05,
+hullAlpha               : 0.03,
+
+# Strand ransac params
+disjoinedSet        : 10,
+octree_res          : 1.0,
+normal_neigbourhood : 0.05,
+inlier_threshold    : 0.04,
+angle_threshold     : 0.5,
+add_threshold       : 0.005,
+connectedness_res   : 0.2,
+distance_threshold  : 0.0,
+
+# TOPICS
+TOPIC_POINT_CLOUD       : "/camera/depth_registered/points",
+}

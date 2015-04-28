@@ -113,6 +113,7 @@ public:
 	// TRIANGULATION
 	void greedyProjectionTriangulation(PointCloudT::Ptr nonPlanar, vPointCloudT *planes, vPointCloudT *hulls, std::vector<cloudMesh> *cm);
 	void greedyProjectionTriangulationPlanes(PointCloudT::Ptr nonPlanar, vPointCloudT *planes, vPointCloudT *hulls, std::vector<cloudMesh> *cm,std::vector<densityDescriptor> &dDesc);
+	void greedyProjectionTriangulationPlanes(PointCloudT::Ptr nonPlanar, vPointCloudT &planes_hulls, std::vector<cloudMesh> &cm,std::vector<densityDescriptor> &dDesc);
 	void improveTriangulation(std::vector<cloudMesh> &cm, vPointCloudT &planes, vPointCloudT &hulls);
 
 	// SET METHODS
@@ -140,6 +141,7 @@ public:
 
 
 	// RETURN METHODS
+	float getVoxelLeafSize(){ return v_leaf_size_; }
 	PointCloudT::Ptr returnCloud() { return cloud_; }
 	std::vector<PointCloudT::Ptr > returnPlanes() { return planes_; }
 	std::vector<PointCloudT::Ptr > returnECPlanes() { return c_planes_; }
@@ -148,12 +150,6 @@ public:
 	std::vector<PointCloudT::Ptr > returnRWHulls() { return rw_hulls_; }
 	std::vector<cloudMesh > returnCloudMesh() { return cloud_mesh_; }
 
-	// SAVE METHODS
-	void saveCloud(std::string path="./", std::string name = "cmprs_cloud"){ savePCD(cloud_, path+name); }
-	void savePlanes(std::string name = "cmprs_planes"){ savePCD(planes_, name); }
-	// void saveSVPlanes(std::string name = "cmprs_sv_cloud"){ savePCD(sv_planes_, name); }
-	void saveHulls(std::string name = "cmprs_hulls"){ savePCD(hulls_, name); }
-	void saveRWHulls(std::string name = "cmprs_rw_hulls"){ savePCD(rw_hulls_, name); }
 private:
 
 	PointCloudT::Ptr superVoxelClustering_s(PointCloudT::Ptr cloud, densityDescriptor &dDesc);
@@ -162,12 +158,8 @@ private:
 	PointCloudT::Ptr planeToConcaveHull_s(PointCloudT::Ptr cloud);
 	void planeToConvexHull_s(const PointCloudT::Ptr cloud, PointCloudT::Ptr out, double &area);
 	PointCloudT::Ptr reumannWitkamLineSimplification_s(PointCloudT::Ptr cloud, densityDescriptor &dDesc);
-	void savePCD(PointCloudT::Ptr cloud, std::string name);
-	void savePCD(std::vector<PointCloudT::Ptr> cloud, std::string name);
-	void saveVTK(pcl::PolygonMesh mesh, std::string name);
 	cloudMesh greedyProjectionTriangulation_s(PointCloudT::Ptr cloud, float gp3_rad);
 	PointCloudT::Ptr PointRGBAtoRGB( PointCloudTA::Ptr cloudRGBA );
-
 };
 
 }
