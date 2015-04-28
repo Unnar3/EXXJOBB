@@ -41,7 +41,7 @@ public:
     virtual ~BaseApplication(void);
 
     virtual void go(void);
-    virtual void renderOneFrame( void );
+    virtual bool renderOneFrame( void );
     virtual void setConfigPath(std::string path);
     virtual void destroyScene(void);
 protected:

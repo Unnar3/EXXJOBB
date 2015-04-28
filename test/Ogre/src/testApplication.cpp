@@ -46,7 +46,7 @@ testApplication::testApplication(void)
     nh = ros::NodeHandle("~");
     PCL_ERROR("Could not load base cloud, baseCloud_ is empty.");
     testApplication::loadParams();
-    testApplication::setConfigPath(configPath_);
+    testApplication::setConfigPath(loadParam<std::string>("configPath", nh));
 
     cmprs.setGP3SearchRad( loadParam<double>("GP3SearchRad", nh) );
     cmprs.setGP3Mu( loadParam<double>("GP3Mu", nh) );
@@ -204,18 +204,23 @@ extern "C" {
 
         ros::Time begin;
         ros::Duration timeout(1.0);
-        while(ros::ok()) {
+        bool keepRolling = true;
+        while(ros::ok() && keepRolling) {
             if ( o > 100 ){
                 break;
             }
             begin = ros::Time::now();
             ros::spinOnce();
             while (ros::Time::now() - begin < timeout){
-                app.renderOneFrame();
+                if( !app.renderOneFrame() ){
+                    keepRolling = false;
+                    break;
+                }
             }
             o++;
             //loop_rate.sleep();
         }
+        // ros::spin();
 
         app.destroyScene();
 

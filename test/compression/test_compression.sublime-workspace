@@ -423,7 +423,7 @@
 			"file": "src/test_compression.cpp",
 			"settings":
 			{
-				"buffer_size": 6155,
+				"buffer_size": 6154,
 				"line_ending": "Unix"
 			}
 		},
@@ -824,15 +824,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 6155,
+						"buffer_size": 6154,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								5958,
-								5958
+								1119,
+								1119
 							]
 						],
 						"settings":
@@ -901,7 +901,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 2337.0,
+						"translation.y": 171.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,

@@ -212,8 +212,16 @@ void BaseApplication::go(void)
     //destroyScene();
 }
 
-void BaseApplication::renderOneFrame(void){
-    mRoot->renderOneFrame();
+bool BaseApplication::renderOneFrame(void){
+    Ogre::WindowEventUtilities::messagePump();
+    if(mWindow->isClosed()){
+        return false;
+    }
+    if(!mRoot->renderOneFrame()){
+        return false;
+    } else {
+        return true;
+    }
 }
 
 void BaseApplication::setConfigPath(std::string config_path){

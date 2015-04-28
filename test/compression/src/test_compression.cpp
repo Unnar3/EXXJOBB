@@ -24,7 +24,7 @@
 
 // DEFINITIONS
 #define PRINT                   1
-#define HZ                      10
+#define HZ                      2
 #define BUFFER_SIZE             1
 #define NODE_NAME               "test_node"
 #define TOPIC_POINT_CLOUD       "/camera/depth_registered/points"
