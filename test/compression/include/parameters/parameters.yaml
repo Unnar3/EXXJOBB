@@ -23,4 +23,5 @@ distance_threshold  : 0.0,
 
 # TOPICS
 TOPIC_POINT_CLOUD       : "/camera/depth_registered/points",
+
 }
