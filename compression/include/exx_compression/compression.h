@@ -113,7 +113,7 @@ public:
 	// TRIANGULATION
 	void greedyProjectionTriangulation(PointCloudT::Ptr nonPlanar, vPointCloudT *planes, vPointCloudT *hulls, std::vector<cloudMesh> *cm);
 	void greedyProjectionTriangulationPlanes(PointCloudT::Ptr nonPlanar, vPointCloudT *planes, vPointCloudT *hulls, std::vector<cloudMesh> *cm,std::vector<densityDescriptor> &dDesc);
-	void greedyProjectionTriangulationPlanes(PointCloudT::Ptr nonPlanar, vPointCloudT &planes_hulls, std::vector<cloudMesh> &cm,std::vector<densityDescriptor> &dDesc);
+	void greedyProjectionTriangulationPlanes(PointCloudT::Ptr nonPlanar, vPointCloudT &planes, vPointCloudT &hulls, std::vector<cloudMesh> &cm,std::vector<float> &dDesc);
 	void improveTriangulation(std::vector<cloudMesh> &cm, vPointCloudT &planes, vPointCloudT &hulls);
 
 	// SET METHODS

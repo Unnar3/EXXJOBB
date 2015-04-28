@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(ros_ogre)
+project(test_ogre)
 
 set(CMAKE_CXX_FLAGS "-O4 -g -fPIC -std=c++0x -fpermissive")
 
@@ -58,20 +58,30 @@ include_directories(
 set(HDRS
 	./include/BaseApplication.h
 	./include/TutorialApplication.h
-	./include/triangulation/triangulation.h
 )
  
 set(SRCS
 	./src/BaseApplication.cpp
 	./src/TutorialApplication.cpp
-	./include/triangulation/triangulation.cpp
 )
 
-add_executable(OgreApp WIN32 ${HDRS} ${SRCS})
+set(HDRStest
+	./include/BaseApplication.h
+	./include/testApplication.h
+)
  
-set_target_properties(OgreApp PROPERTIES DEBUG_POSTFIX _d)
- 
-target_link_libraries(OgreApp compression ${OGRE_LIBRARIES} ${OIS_LIBRARIES} ${catkin_LIBRARIES} "/usr/lib/x86_64-linux-gnu/libboost_system.so.1.54.0" libvtkCommon.so libvtkFiltering.so libvtkGraphics.so)
+set(SRCStest
+	./src/BaseApplication.cpp
+	./src/testApplication.cpp
+)
+
+add_executable(testOgreApp WIN32 ${HDRS} ${SRCS})
+target_link_libraries(testOgreApp compression ${OGRE_LIBRARIES} ${OIS_LIBRARIES} ${catkin_LIBRARIES} "/usr/lib/x86_64-linux-gnu/libboost_system.so.1.54.0" libvtkCommon.so libvtkFiltering.so libvtkGraphics.so)
+set_target_properties(testOgreApp PROPERTIES DEBUG_POSTFIX _d)
+
+add_executable(testApp WIN32 ${HDRStest} ${SRCStest}) 
+set_target_properties(testApp PROPERTIES DEBUG_POSTFIX _d)
+target_link_libraries(testApp compression ${OGRE_LIBRARIES} ${OIS_LIBRARIES} ${catkin_LIBRARIES} "/usr/lib/x86_64-linux-gnu/libboost_system.so.1.54.0")
  
 #file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dist/bin)
 #file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/dist/media)
@@ -79,6 +89,10 @@ target_link_libraries(OgreApp compression ${OGRE_LIBRARIES} ${OIS_LIBRARIES} ${c
 
 #set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/dist/bin)
  
-install(TARGETS OgreApp
+install(TARGETS testOgreApp
+	RUNTIME DESTINATION bin
+	CONFIGURATIONS All)
+
+install(TARGETS testApp
 	RUNTIME DESTINATION bin
 	CONFIGURATIONS All)

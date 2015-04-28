@@ -354,9 +354,11 @@ namespace EXX{
 		(*cm).push_back( compression::greedyProjectionTriangulation_s( nonPlanar, utils::l2_norm(v_leaf_size_) * 1.5f ));
 	}
 
-	void compression::greedyProjectionTriangulationPlanes(PointCloudT::Ptr nonPlanar, vPointCloudT &planes_hulls, std::vector<cloudMesh> &cm,std::vector<densityDescriptor> &dDesc){
-		for (size_t i = 0; i < planes_hulls.size(); ++i){
-			cm.push_back( compression::greedyProjectionTriangulation_s( planes_hulls[i], dDesc[i].gp3_search_rad ));
+	void compression::greedyProjectionTriangulationPlanes(PointCloudT::Ptr nonPlanar, vPointCloudT &planes, vPointCloudT &hulls, std::vector<cloudMesh> &cm,std::vector<float> &dDesc){
+		for (size_t i = 0; i < planes.size(); ++i){
+			PointCloudT::Ptr tmp_cloud (new PointCloudT ());
+			*tmp_cloud = *planes.at(i)+*hulls.at(i);
+			cm.push_back( compression::greedyProjectionTriangulation_s( tmp_cloud, dDesc[i] ));
 		}
 		cm.push_back( compression::greedyProjectionTriangulation_s( nonPlanar, utils::l2_norm(v_leaf_size_) * 1.5f ));
 	}

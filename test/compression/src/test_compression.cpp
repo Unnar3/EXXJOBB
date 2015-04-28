@@ -28,7 +28,7 @@
 #define BUFFER_SIZE             1
 #define NODE_NAME               "test_node"
 #define TOPIC_POINT_CLOUD       "/camera/depth_registered/points"
-#define TOPIC_EXTRACTED_PLANES  "/s8/detectedObject"
+#define TOPIC_EXTRACTED_PLANES  "/EXX/compressedPlanes"
 
 typedef pcl::PointXYZRGB PointT;
 typedef pcl::PointNormal PointNT;
@@ -134,11 +134,15 @@ private:
     void cloudPublish(PointCloudT::Ptr nonPlanar ,std::vector<PointCloudT::Ptr> &planes, std::vector<PointCloudT::Ptr> &hulls, std::vector<EXX::densityDescriptor> &dDesc)
     {
         exx_compression::planes pmsgs;
+        sensor_msgs::PointCloud2 output_p;
+        sensor_msgs::PointCloud2 output_h;
         sensor_msgs::PointCloud2 output;
         
         for (size_t i = 0; i < planes.size(); ++i){
-            pcl::toROSMsg(*planes[i] + *hulls[i] , output);
-            pmsgs.planes.push_back(output);
+            pcl::toROSMsg(*planes[i] , output_p);
+            pcl::toROSMsg(*hulls[i] , output_h);
+            pmsgs.planes.push_back(output_p);
+            pmsgs.hulls.push_back(output_h);
             pmsgs.gp3_rad.push_back(dDesc[i].gp3_search_rad);
         }
         pcl::toROSMsg(*nonPlanar , output);
