@@ -423,7 +423,7 @@
 			"file": "src/test_compression.cpp",
 			"settings":
 			{
-				"buffer_size": 6709,
+				"buffer_size": 6940,
 				"line_ending": "Unix"
 			}
 		},
@@ -682,6 +682,7 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"trian",
 			"HZ",
 			"utils::load",
 			"vPlaneDescriptor",
@@ -825,15 +826,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 6709,
+						"buffer_size": 6940,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								6693,
-								6693
+								5722,
+								5724
 							]
 						],
 						"settings":
@@ -902,7 +903,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 527.0,
+						"translation.y": 1318.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -1184,8 +1185,8 @@
 						"selection":
 						[
 							[
-								155,
-								155
+								62,
+								79
 							]
 						],
 						"settings":
@@ -1329,7 +1330,7 @@
 		[
 			[
 				"",
-				"~/catkin_ws/src/EXXJOBB/compression/compression.sublime-project"
+				"~/catkin_ws/src/EXXJOBB/test/compression/src/ogre.sublime-project"
 			]
 		],
 		"width": 380.0

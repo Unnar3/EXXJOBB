@@ -1,5 +1,6 @@
 #include <exx_compression/compression.h>
 #include <utils/utils.h>
+#include <intersections/intersections.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/project_inliers.h>
@@ -301,6 +302,60 @@ namespace EXX{
 	}
 
 
+	void compression::cornerMatching(vPointCloudT &planes, vPointCloudT &hulls, std::vector<Eigen::Vector4d> &coeff){
+
+		std::cout << "corner" << std::endl;
+		Eigen::VectorXd line;
+		Eigen::Vector4d point;
+		Eigen::Vector4d l_point;
+		Eigen::Vector4d d_point;
+		pcl::ProjectInliers<PointT> proj;
+		pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
+		pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
+		std::cout << "loop" << std::endl;
+		for (size_t i = 1; i < coeff.size(); ++i){
+			pcl::planeWithPlaneIntersection( coeff.at(i), coeff.at(i-1), line );
+			l_point(0) = line(0);
+			l_point(1) = line(1);
+			l_point(2) = line(2);
+			l_point(3) = 0;
+			d_point(0) = line(3);
+			d_point(1) = line(4);
+			d_point(2) = line(5);
+			d_point(3) = 0;
+			std::cout << "inner loop" << std::endl;
+			for ( size_t j = 0; j < hulls.at(i)->points.size(); ++j ){
+				point(0) = hulls.at(i)->points.at(j).x;
+				point(1) = hulls.at(i)->points.at(j).y;
+				point(2) = hulls.at(i)->points.at(j).z;
+				point(3) = 0;
+				std::cout << "if" << std::endl;
+				if ( pcl::sqrPointToLineDistance(point.cast<float>(), l_point.cast<float>(), d_point.cast<float>()) < 0.1 ){
+					planes.at(i)->points.push_back( hulls.at(i)->points.at(j) );
+					inliers->indices.push_back(j);
+				}
+				std::cout << "finished if" << std::endl;
+			}
+			std::cout << "finished inner for" << std::endl;
+			coefficients->values.push_back( line(0) );
+			std::cout << "hmmm" << std::endl;
+			coefficients->values.push_back( line(1) );
+			coefficients->values.push_back( line(2) );
+			coefficients->values.push_back( line(3) );
+			coefficients->values.push_back( line(4) );
+			coefficients->values.push_back( line(5) );
+			std::cout << "project" << std::endl;
+			proj.setModelType (pcl::SACMODEL_LINE);
+			proj.setInputCloud (hulls.at(i));
+			proj.setIndices(inliers);
+			proj.setModelCoefficients (coefficients);
+			proj.filter (*hulls.at(i));	
+			coefficients->values.clear();		
+		}
+
+	}
+
+
 	void compression::getPlaneDensity( vPointCloudT &planes, vPointCloudT &hulls,  std::vector<densityDescriptor> &dDesc){
 
 		// check if planes and hulls are same size
@@ -346,11 +401,15 @@ namespace EXX{
 	}
 
 	void compression::greedyProjectionTriangulationPlanes(PointCloudT::Ptr nonPlanar, vPointCloudT *planes, vPointCloudT *hulls, std::vector<cloudMesh> *cm, std::vector<densityDescriptor> &dDesc){
+		PointCloudT::Ptr tmp_hull (new PointCloudT ());
 		for (size_t i = 0; i < planes->size(); ++i){
 			PointCloudT::Ptr tmp_cloud (new PointCloudT ());
+			*tmp_hull += *hulls->at(i);
 			*tmp_cloud = *planes->at(i)+*hulls->at(i);
 			(*cm).push_back( compression::greedyProjectionTriangulation_s( tmp_cloud, dDesc[i].gp3_search_rad ));
 		}
+		std::cout << "finished with planes" << std::endl;
+		(*cm).push_back( compression::greedyProjectionTriangulation_s( tmp_hull, 0.5f));
 		(*cm).push_back( compression::greedyProjectionTriangulation_s( nonPlanar, utils::l2_norm(v_leaf_size_) * 1.5f ));
 	}
 

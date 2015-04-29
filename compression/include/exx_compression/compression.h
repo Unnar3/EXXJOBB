@@ -108,6 +108,8 @@ public:
 	void planeToConvexHull(vPointCloudT &planes, vPointCloudT &hulls, std::vector<double> &area);
 	void reumannWitkamLineSimplification(vPointCloudT* hulls, vPointCloudT* s_hulls, std::vector<densityDescriptor> &dDesc);
 
+	// CORNERMATCHING
+	void cornerMatching(vPointCloudT &planes, vPointCloudT &hulls, std::vector<Eigen::Vector4d> &coeff);
 	void getPlaneDensity( vPointCloudT &planes, vPointCloudT &hulls, std::vector<densityDescriptor> &dDesc);
 
 	// TRIANGULATION

@@ -135,6 +135,7 @@ public:
         cmprs.planeToConcaveHull(&plane_vec, &hulls);
         cmprs.getPlaneDensity( plane_vec, hulls, dDesc);
         cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
+        cmprs.cornerMatching(plane_vec, simplified_hulls, normal);
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
         cloudPublish( nonPlanar, super_planes, simplified_hulls, dDesc );
     }
