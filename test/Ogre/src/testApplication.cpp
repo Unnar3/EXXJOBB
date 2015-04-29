@@ -31,6 +31,7 @@ This source file is part of the
 #include <CEGUI/RendererModules/Ogre/CEGUIOgreRenderer.h>
 
 #include <boost/thread/thread.hpp>
+#include <cstdint>
 
 using namespace EXX;
 using namespace EXX::params;
@@ -43,6 +44,8 @@ testApplication::testApplication(void)
 {
     first = true;
     count = 0;
+    bs.set(1);
+
     nh = ros::NodeHandle("~");
     PCL_ERROR("Could not load base cloud, baseCloud_ is empty.");
     testApplication::loadParams();
@@ -62,23 +65,17 @@ testApplication::~testApplication(void)
 
 //-------------------------------------------------------------------------------------
 void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointCloudT::Ptr> planes, std::vector<PointCloudT::Ptr> hulls, std::vector<float> gp3_rad){
-    
-    std::cout << "updateScene" << std::endl;
-
-    // create ManualObject
-    if ( mSceneMgr->hasManualObject("manual") ){
-        mSceneMgr->destroyManualObject("manual");
+    // Initialize the manual object if it hasnt been
+    if (first){
+        manual = mSceneMgr->createManualObject("manual");
     }
 
-    Ogre::ManualObject* manual = mSceneMgr->createManualObject("manual");
-    
-    // specify the material (by name) and rendering type
-    manual->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST);
-    
     std::vector<EXX::cloudMesh> cmesh;
-
     cmprs.greedyProjectionTriangulationPlanes(nonPlanar, planes, hulls, cmesh, gp3_rad);
     cmprs.improveTriangulation(cmesh, planes, hulls);
+
+    manual->clear();
+    manual->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST);
     
     PointCloudT::Ptr tmp_cloud (new PointCloudT ());
     for (int i = 0; i < cmesh.size()-1; ++i){
@@ -88,13 +85,9 @@ void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointC
     int pic = 0;
     Ogre::Real r, g, b;
     for (std::vector<EXX::cloudMesh>::iterator ite = cmesh.begin(); ite < cmesh.end()-1; ++ite){
-        // r = rand () % 255;
-        // g = rand () % 255;
-        // b = rand () % 255;
+
         for (size_t i = 0; i < (*ite).cloud->points.size(); i++){
             manual->position((*ite).cloud->points[i].x, -(*ite).cloud->points[i].y, -(*ite).cloud->points[i].z);
-
-            // std::cout << cloud->points[i].x << " " << cloud->points[i].y << " " << cloud->points[i].z << std::endl;
             r = (Ogre::Real)(*ite).cloud->points[i].r / (Ogre::Real)255;
             g = (Ogre::Real)(*ite).cloud->points[i].g / (Ogre::Real)255;
             b = (Ogre::Real)(*ite).cloud->points[i].b / (Ogre::Real)255;
@@ -114,11 +107,12 @@ void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointC
         }
         pic += (*ite).cloud->points.size();
     }
-
-    // tell Ogre, your definition has finished
     manual->end();  
-    // add ManualObject to the RootSceneNode (so it will be visible)
-    mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(manual);
+
+    if (first){
+        mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(manual);
+        first = false;
+    }
     std::cout << "end" << std::endl;
 }
 
@@ -205,6 +199,16 @@ extern "C" {
         ros::Time begin;
         ros::Duration timeout(1.0);
         bool keepRolling = true;
+
+        // ros::AsyncSpinner spinner(1);
+        // std::cout << "about to start spinner" << std::endl;
+        // spinner.start();
+        // std::cout << "spinner started" << std::endl;
+        // app.renderFrames();
+        // std::cout << "finished rendering" << std::endl;
+        // spinner.stop();
+        // std::cout << "spinner stopped" << std::endl;
+
         while(ros::ok() && keepRolling) {
             if ( o > 100 ){
                 break;
@@ -221,6 +225,14 @@ extern "C" {
             //loop_rate.sleep();
         }
         // ros::spin();
+
+        char a = 1;
+        const int s = 3;    
+        std::bitset<s> x(a);
+        for (size_t j = 0; j < 10; ++j){
+            x = utils::shiftRight<s>(x);
+            std::cout << x << std::endl;
+        }
 
         app.destroyScene();
 

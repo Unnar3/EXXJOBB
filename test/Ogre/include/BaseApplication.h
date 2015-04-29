@@ -42,6 +42,7 @@ public:
 
     virtual void go(void);
     virtual bool renderOneFrame( void );
+    virtual void renderFrames(void);
     virtual void setConfigPath(std::string path);
     virtual void destroyScene(void);
 protected:

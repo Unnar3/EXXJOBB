@@ -224,6 +224,10 @@ bool BaseApplication::renderOneFrame(void){
     }
 }
 
+void BaseApplication::renderFrames(void){
+    mRoot->startRendering();
+}
+
 void BaseApplication::setConfigPath(std::string config_path){
     path = config_path;
 }

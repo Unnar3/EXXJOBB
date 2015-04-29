@@ -26,6 +26,7 @@ This source file is part of the
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/conversions.h>
 #include "BaseApplication.h"
+#include <bitset>
 
 typedef pcl::PointXYZRGB PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
@@ -46,6 +47,8 @@ class testApplication : public BaseApplication
 
     bool first;
     int count;
+    std::bitset<2> bs;
+    Ogre::ManualObject* manual;
 
     EXX::compression cmprs;
     ros::NodeHandle nh;
