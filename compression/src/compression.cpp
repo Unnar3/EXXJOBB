@@ -328,7 +328,7 @@ namespace EXX{
 			dens.voxel_res = std::min( std::max( std::min( x, y ) / 10.0f * pRatio * pRatio, v_leaf_size_), sv_voxel_res_ );
 			dens.seed_res = std::min( 2.0f * dens.voxel_res, sv_seed_res_ );
 			dens.rw_max_dist = std::min( dens.voxel_res / 1.5f, rw_hull_max_dist_ );
-			dens.gp3_search_rad = std::min( 2.0f * utils::l2_norm(dens.seed_res), gp3_search_rad_ );
+			dens.gp3_search_rad = std::min( 2.5f * utils::l2_norm(dens.seed_res), gp3_search_rad_ );
 			dDesc.push_back( dens );
 		}
 
@@ -360,7 +360,9 @@ namespace EXX{
 			*tmp_cloud = *planes.at(i)+*hulls.at(i);
 			cm.push_back( compression::greedyProjectionTriangulation_s( tmp_cloud, dDesc[i] ));
 		}
-		cm.push_back( compression::greedyProjectionTriangulation_s( nonPlanar, utils::l2_norm(v_leaf_size_) * 1.5f ));
+		if (nonPlanar->points.size() > 0){
+			cm.push_back( compression::greedyProjectionTriangulation_s( nonPlanar, utils::l2_norm(v_leaf_size_) * 1.5f ));
+		}
 	}
 
 	cloudMesh compression::greedyProjectionTriangulation_s(PointCloudT::Ptr cloud, float gp3_rad){

@@ -7,6 +7,7 @@
 #include <plane_features/plane_features.h>
 #include <ransac_primitives/primitive_core.h>
 #include <ransac_primitives/plane_primitive.h>
+#include <pcl/filters/extract_indices.h>    
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -24,7 +25,6 @@
 
 // DEFINITIONS
 #define PRINT                   1
-#define HZ                      2
 #define BUFFER_SIZE             1
 #define NODE_NAME               "test_node"
 #define TOPIC_POINT_CLOUD       "/camera/depth_registered/points"
@@ -38,7 +38,9 @@ using namespace EXX::params;
 
 class TestCompression
 { 
+public:
     ros::NodeHandle nh;
+private:
     ros::Subscriber point_cloud_subscriber;
     ros::Publisher point_cloud_publisher;
     EXX::compression cmprs;
@@ -53,6 +55,8 @@ public:
         cmprs.setVoxelLeafSize(loadParam<double>("VoxelLeafSize", nh));
         cmprs.setSVVoxelResolution(loadParam<double>("SVVoxelResolution", nh));
         cmprs.setSVSeedResolution(loadParam<double>("SVSeedResolution", nh));
+        cmprs.setSVColorImportance(loadParam<double>("SVColorImportance", nh));
+        cmprs.setSVSpatialImportance(loadParam<double>("SVSpatialImportance", nh));
         cmprs.setRWHullMaxDist(loadParam<double>("RWHullMaxDist", nh));
         cmprs.setHULLAlpha(loadParam<double>("hullAlpha", nh));
 
@@ -92,9 +96,15 @@ public:
         std::vector<PointCloudT::Ptr> plane_vec;
         std::vector<Eigen::Vector4d> normal;
         std::vector<int> ind;
+        pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
+        pcl::ExtractIndices<PointT> extract;
         Eigen::VectorXd data;
         for (size_t j = 0; j < extracted.size(); ++j){
             ind = extracted[j]->supporting_inds;
+            
+            inliers->indices.reserve(inliers->indices.size() + ind.size());
+            inliers->indices.insert(inliers->indices.end(), ind.begin(), ind.end());
+
             extracted.at(j)->shape_data(data); 
             normal.push_back(data.segment<4>(0));
             PointCloudT::Ptr test_cloud (new PointCloudT ());
@@ -103,6 +113,12 @@ public:
             }
             plane_vec.push_back(test_cloud);
         }
+
+        PointCloudT::Ptr nonPlanar (new PointCloudT ());
+        extract.setInputCloud (voxel_cloud);
+        extract.setIndices (inliers);
+        extract.setNegative (true);
+        extract.filter (*nonPlanar);
 
         // Define all remaining data structures
         std::vector<PointCloudT::Ptr> hulls;
@@ -120,7 +136,7 @@ public:
         cmprs.getPlaneDensity( plane_vec, hulls, dDesc);
         cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
-        cloudPublish( voxel_cloud, super_planes, simplified_hulls, dDesc );
+        cloudPublish( nonPlanar, super_planes, simplified_hulls, dDesc );
     }
 
 private:
@@ -157,7 +173,7 @@ int main(int argc, char **argv) {
 
     TestCompression test;
     
-    ros::Rate loop_rate(HZ);
+    ros::Rate loop_rate(loadParam<int>("HZ", test.nh ));
     while(ros::ok()) {
         ros::spinOnce();
         loop_rate.sleep();

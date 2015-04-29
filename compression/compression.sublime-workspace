@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"clou",
+				"cloud_mesh_"
+			],
+			[
 				"Test",
 				"testCompression"
 			],
@@ -447,7 +451,7 @@
 			"file": "src/compression.cpp",
 			"settings":
 			{
-				"buffer_size": 18349,
+				"buffer_size": 18391,
 				"line_ending": "Unix"
 			}
 		},
@@ -824,7 +828,7 @@
 	"groups":
 	[
 		{
-			"selected": 0,
+			"selected": 6,
 			"sheets":
 			[
 				{
@@ -912,7 +916,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
@@ -1183,15 +1187,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 18349,
+						"buffer_size": 18391,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								13736,
-								13736
+								11862,
+								11862
 							]
 						],
 						"settings":
@@ -1258,11 +1262,11 @@
 							"syntax": "Packages/C++/C.tmLanguage",
 							"translate_tabs_to_spaces": false
 						},
-						"translation.x": 37.0,
-						"translation.y": 6467.0,
+						"translation.x": 0.0,
+						"translation.y": 5726.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
@@ -1349,7 +1353,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
@@ -1365,8 +1369,12 @@
 						"selection":
 						[
 							[
-								3965,
-								3965
+								4271,
+								4291
+							],
+							[
+								4333,
+								4355
 							]
 						],
 						"settings":
@@ -1433,11 +1441,11 @@
 							"syntax": "Packages/C++/C.tmLanguage",
 							"translate_tabs_to_spaces": false
 						},
-						"translation.x": 798.0,
-						"translation.y": 1767.0,
+						"translation.x": 0.0,
+						"translation.y": 1995.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 0,
 					"type": "text"
 				}
 			]
@@ -1502,7 +1510,7 @@
 		[
 			[
 				"",
-				"~/catkin_ws/src/EXXJOBB/test/compression/src/ogre.sublime-project"
+				"~/catkin_ws/src/EXXJOBB/test/compression/test_compression.sublime-project"
 			]
 		],
 		"width": 380.0

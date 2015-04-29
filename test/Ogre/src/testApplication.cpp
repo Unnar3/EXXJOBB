@@ -71,20 +71,22 @@ void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointC
     }
 
     std::vector<EXX::cloudMesh> cmesh;
+    std::cout << "trian" << std::endl;
     cmprs.greedyProjectionTriangulationPlanes(nonPlanar, planes, hulls, cmesh, gp3_rad);
+    std::cout << "impr" << std::endl;
     cmprs.improveTriangulation(cmesh, planes, hulls);
-
+    std::cout << "hmm" << std::endl;
     manual->clear();
     manual->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST);
     
     PointCloudT::Ptr tmp_cloud (new PointCloudT ());
-    for (int i = 0; i < cmesh.size()-1; ++i){
+    for (int i = 0; i < cmesh.size(); ++i){
         *tmp_cloud += *cmesh[i].cloud;
     }
 
     int pic = 0;
     Ogre::Real r, g, b;
-    for (std::vector<EXX::cloudMesh>::iterator ite = cmesh.begin(); ite < cmesh.end()-1; ++ite){
+    for (std::vector<EXX::cloudMesh>::iterator ite = cmesh.begin(); ite < cmesh.end(); ++ite){
 
         for (size_t i = 0; i < (*ite).cloud->points.size(); i++){
             manual->position((*ite).cloud->points[i].x, -(*ite).cloud->points[i].y, -(*ite).cloud->points[i].z);
@@ -156,26 +158,7 @@ void testApplication::point_cloud_callback(const exx_compression::planes& cloud_
 }
 
 void testApplication::loadParams(){
-    // nh.param<std::string>("configPath", configPath_, "./");
     configPath_ = loadParam<std::string>("configPath", nh);
-    nh.param<std::string>("cloudPath", cloudPath_, "./");
-    nh.param<std::string>("savePath", savePath_, "./");
-    nh.param<double>("SVVoxelResolution", SVVoxelResolution_, 0.1);
-    nh.param<double>("SVSeedResolution", SVSeedResolution_, 0.3);
-    nh.param<double>("SVColorImportance", SVColorImportance_, 1.0);
-    nh.param<double>("SVSpatialImportance", SVSpatialImportance_, 0.01);
-    nh.param<double>("RANSACDistanceThreshold", RANSACDistanceThreshold_, 0.04);
-    nh.param<int>("RANSACMinInliers", RANSACMinInliers_, 200);
-    nh.param<double>("VoxelLeafSize", VoxelLeafSize_, 0.02);
-    nh.param<double>("GP3SearchRad", GP3SearchRad_, 0.3); 
-    nh.param<double>("GP3Mu", GP3Mu_, 2.5);
-    nh.param<double>("GP3MaxNearestNeighbours", GP3MaxNearestNeighbours_, 100);
-    nh.param<double>("GP3Ksearch", GP3Ksearch_, 20);
-    nh.param<double>("RWHullMaxDist", RWHullMaxDist_, 0.3);
-    nh.param<bool>("simplifyHulls", simplifyHulls_, true);
-    nh.param<double>( "ECClusterTolerance", ECClusterTolerance_, 0.05);
-    nh.param<int>( "ECMinClusterSize", ECMinClusterSize_, 100);
-    nh.param<double>("hullAlpha", hullAlpha_, 0.1);
 }
 
 #ifdef __cplusplus
@@ -184,7 +167,7 @@ extern "C" {
     int main(int argc, char *argv[])
     {
         ros::init(argc, argv, "rosOgre_node");
-        int o = 0;
+
         // Create application object
         testApplication app;
         ros::Rate loop_rate(0.2);
@@ -197,22 +180,9 @@ extern "C" {
         }
 
         ros::Time begin;
-        ros::Duration timeout(1.0);
+        ros::Duration timeout(0.5);
         bool keepRolling = true;
-
-        // ros::AsyncSpinner spinner(1);
-        // std::cout << "about to start spinner" << std::endl;
-        // spinner.start();
-        // std::cout << "spinner started" << std::endl;
-        // app.renderFrames();
-        // std::cout << "finished rendering" << std::endl;
-        // spinner.stop();
-        // std::cout << "spinner stopped" << std::endl;
-
         while(ros::ok() && keepRolling) {
-            if ( o > 100 ){
-                break;
-            }
             begin = ros::Time::now();
             ros::spinOnce();
             while (ros::Time::now() - begin < timeout){
@@ -221,21 +191,9 @@ extern "C" {
                     break;
                 }
             }
-            o++;
-            //loop_rate.sleep();
-        }
-        // ros::spin();
-
-        char a = 1;
-        const int s = 3;    
-        std::bitset<s> x(a);
-        for (size_t j = 0; j < 10; ++j){
-            x = utils::shiftRight<s>(x);
-            std::cout << x << std::endl;
         }
 
         app.destroyScene();
-
         return 0;
     }
 
