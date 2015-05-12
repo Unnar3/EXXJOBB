@@ -1,0 +1,5 @@
+<launch>
+	<node pkg="exx_test_statistic" type="test_statistic" name="test_statistic" clear_params="true" output="screen">
+		<rosparam file="$(find exx_test_statistic)/include/parameters/parameters.yaml" command="load"/>
+	</node>
+</launch>

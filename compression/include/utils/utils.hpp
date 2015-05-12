@@ -6,6 +6,11 @@ namespace EXX{
 			T power = 2.0;
 			return std::sqrt( std::pow( a, power ) + std::pow( a, power ) );
 		}
+
+		template<typename T>
+		T sigmoid( T ratio, T slope ){
+			return 1 / ( 1 + std::exp(-slope*(ratio - 0.5)));
+		}
 	}
 
 	namespace params{

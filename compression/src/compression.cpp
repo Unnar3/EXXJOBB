@@ -12,6 +12,7 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/surface/concave_hull.h>
 #include <pcl/octree/octree_impl.h>
+#include <math.h>
 
 namespace EXX{
 
@@ -380,10 +381,10 @@ namespace EXX{
 			float area = x * y;
 			float max_points = area / ( v_leaf_size_ * v_leaf_size_ ); 
 			float pRatio = float(planes[i]->points.size()) / max_points;
-			dens.voxel_res = std::min( std::max( std::min( x, y ) / 10.0f * pRatio * pRatio, v_leaf_size_), sv_voxel_res_ );
-			dens.seed_res = std::min( 2.0f * dens.voxel_res, sv_seed_res_ );
-			dens.rw_max_dist = std::min( dens.voxel_res / 1.5f, rw_hull_max_dist_ );
-			dens.gp3_search_rad = std::min( 2.5f * utils::l2_norm(dens.seed_res), gp3_search_rad_ );
+			dens.seed_res = std::min( std::max( std::min( x, y ) / 5.0f * utils::sigmoid(pRatio, 3.0f), v_leaf_size_), sv_seed_res_ );
+			dens.voxel_res = std::min( dens.seed_res, sv_voxel_res_ );
+			dens.rw_max_dist = std::min( dens.seed_res / 2.0f, rw_hull_max_dist_ );
+			dens.gp3_search_rad = std::min( 2.2f * utils::l2_norm(dens.seed_res), gp3_search_rad_ );
 			dDesc.push_back( dens );
 		}
 
