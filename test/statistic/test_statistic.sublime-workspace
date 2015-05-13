@@ -4,6 +4,18 @@
 		"selected_items":
 		[
 			[
+				"gp3",
+				"gp3_search_rad"
+			],
+			[
+				"ros",
+				"ros::Time"
+			],
+			[
+				"t_t",
+				"t_t1"
+			],
+			[
 				"comp",
 				"compress"
 			],
@@ -288,10 +300,6 @@
 				"gp3_Ksearch_"
 			],
 			[
-				"gp3",
-				"gp3_max_nearest_neighbours_"
-			],
-			[
 				"gp3_",
 				"gp3_min_angle_"
 			],
@@ -483,8 +491,20 @@
 			"file": "include/parameters/parameters.yaml",
 			"settings":
 			{
-				"buffer_size": 628,
+				"buffer_size": 768,
 				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "KITCHEN\n\n# Compression class params\nVoxelLeafSize           : 0.02,\nSVVoxelResolution       : 0.04,\nSVSeedResolution        : 0.10,\nSVColorImportance       : 0.1,\nSVSpatialImportance     : 5.0,\nRWHullMaxDist           : 0.1,\nhullAlpha               : 0.03,\n\n# Strand ransac params\ndisjoinedSet            : 10,\noctree_res              : 1.0,\nnormal_neigbourhood     : 0.05,\ninlier_threshold        : 0.15,\nangle_threshold         : 0.5,\nadd_threshold           : 0.1,\nconnectedness_res       : 0.15,\ndistance_threshold      : 0.0,\n\n# TOPICS\nTOPIC_POINT_CLOUD       : \"/camera/depth_registered/points\",\nHZ                      : 20,\n\nvoxelGridFilter\n  min: 0.0208613 sec\n  max: 0.0316715 sec\n  average: 0.0258759 sec\nransac\n  min: 0.151603 sec\n  max: 0.357387 sec\n  average: 0.243045 sec\nProject to Plane\n  min: 0.000440087 sec\n  max: 0.00172378 sec\n  average: 0.000701307 sec\nDensity measure\n  min: 0.00906792 sec\n  max: 0.0656575 sec\n  average: 0.0292589 sec\nConcave Hull\n  min: 0.119632 sec\n  max: 0.247461 sec\n  average: 0.188974 sec\nSimplify Concave Hull\n  min: 7.832e-05 sec\n  max: 0.00105221 sec\n  average: 0.000477482 sec\nSuper Voxels\n  min: 0.0343162 sec\n  max: 0.0847052 sec\n  average: 0.053456 sec\nCompression\n  min: 0.379349 sec\n  max: 0.749404 sec\n  average: 0.541799 sec",
+			"file": "include/parameters/stat.txt",
+			"file_size": 8,
+			"file_write_time": 130759877645570185,
+			"settings":
+			{
+				"buffer_size": 1283,
+				"line_ending": "Unix",
+				"name": "stat.txt"
 			}
 		},
 		{
@@ -499,7 +519,7 @@
 			"file": "src/test_statistic.cpp",
 			"settings":
 			{
-				"buffer_size": 10123,
+				"buffer_size": 11298,
 				"line_ending": "Unix"
 			}
 		}
@@ -867,7 +887,7 @@
 	"groups":
 	[
 		{
-			"selected": 2,
+			"selected": 5,
 			"sheets":
 			[
 				{
@@ -954,7 +974,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
@@ -1041,7 +1061,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 4,
 					"type": "text"
 				},
 				{
@@ -1050,15 +1070,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 628,
+						"buffer_size": 768,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								123,
-								123
+								666,
+								666
 							]
 						],
 						"settings":
@@ -1128,11 +1148,101 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
 					"buffer": 3,
+					"file": "include/parameters/stat.txt",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1283,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								532,
+								532
+							]
+						],
+						"settings":
+						{
+							"BracketHighlighterBusy": false,
+							"auto_name": "stat.txt",
+							"bh_regions":
+							[
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_angle_content",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_curly_content",
+								"bh_c_define",
+								"bh_c_define_center",
+								"bh_c_define_open",
+								"bh_c_define_close",
+								"bh_c_define_content",
+								"bh_default",
+								"bh_default_center",
+								"bh_default_open",
+								"bh_default_close",
+								"bh_default_content",
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_regex_content",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_double_quote_content",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_square_content",
+								"bh_round",
+								"bh_round_center",
+								"bh_round_open",
+								"bh_round_close",
+								"bh_round_content",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close",
+								"bh_single_quote_content",
+								"bh_tag",
+								"bh_tag_center",
+								"bh_tag_open",
+								"bh_tag_close",
+								"bh_tag_content",
+								"bh_unmatched",
+								"bh_unmatched_center",
+								"bh_unmatched_open",
+								"bh_unmatched_close",
+								"bh_unmatched_content"
+							],
+							"syntax": "Packages/Text/Plain text.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 57.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
 					"file": "package.xml",
 					"semi_transient": false,
 					"settings":
@@ -1221,20 +1331,20 @@
 					"type": "text"
 				},
 				{
-					"buffer": 4,
+					"buffer": 5,
 					"file": "src/test_statistic.cpp",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 10123,
+						"buffer_size": 11298,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								4588,
-								4588
+								9953,
+								9953
 							]
 						],
 						"settings":
@@ -1303,10 +1413,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 2211.0,
+						"translation.y": 4446.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 0,
 					"type": "text"
 				}
 			]
@@ -1379,7 +1489,7 @@
 		[
 			[
 				"",
-				"~/catkin_ws/src/EXXJOBB/test/compression/src/ogre.sublime-project"
+				"~/catkin_ws/src/EXXJOBB/compression/compression.sublime-project"
 			]
 		],
 		"width": 380.0

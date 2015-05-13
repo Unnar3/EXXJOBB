@@ -1,0 +1,95 @@
+KITCHEN
+
+
+##################################################################
+PARAMS:
+
+# Compression class params
+VoxelLeafSize           : 0.02,
+SVVoxelResolution       : 0.04,
+SVSeedResolution        : 0.10,
+SVColorImportance       : 0.1,
+SVSpatialImportance     : 5.0,
+RWHullMaxDist           : 0.1,
+hullAlpha               : 0.03,
+
+# Strand ransac params
+disjoinedSet            : 10,
+octree_res              : 1.0,
+normal_neigbourhood     : 0.05,
+inlier_threshold        : 0.15,
+angle_threshold         : 0.5,
+add_threshold           : 0.1,
+connectedness_res       : 0.15,
+distance_threshold      : 0.0,
+
+# Reconstruction
+GP3SearchRad            : 10.0,
+GP3Mu                   : 3.5,
+GP3MaxNearestNeighbours : 50,
+GP3Ksearch              : 15,
+
+# TOPICS
+TOPIC_POINT_CLOUD       : "/camera/depth_registered/points",
+HZ                      : 20,
+
+###################################################################
+TIME:
+
+voxelGridFilter
+  min: 0.0184624 sec
+  max: 0.0294669 sec
+  average: 0.0231945 sec
+ransac
+  min: 0.136512 sec
+  max: 0.298899 sec
+  average: 0.21271 sec
+Project to Plane
+  min: 0.000429398 sec
+  max: 0.00105738 sec
+  average: 0.000649252 sec
+Density measure
+  min: 0.00830304 sec
+  max: 0.0572748 sec
+  average: 0.0270286 sec
+Concave Hull
+  min: 0.106439 sec
+  max: 0.215437 sec
+  average: 0.158372 sec
+Simplify Concave Hull
+  min: 6.8545e-05 sec
+  max: 0.000633341 sec
+  average: 0.000412506 sec
+Super Voxels
+  min: 0.0295383 sec
+  max: 0.0614524 sec
+  average: 0.0465518 sec
+Compression
+  min: 0.337126 sec
+  max: 0.58403 sec
+  average: 0.468926 sec
+
+Triangulation
+  min: 0.000149476 sec
+  max: 0.219359 sec
+  average: 0.0635696 sec
+Fix triangulation
+  min: 0 sec
+  max: 0 sec
+  average: -nan sec
+Reconstruction
+  min: 0.000149476 sec
+  max: 0.000985103 sec
+  average: 0.000468878 sec
+
+
+
+#############################################################
+COMPRESSION:
+
+Compression
+  min: 2486 points
+  max: 12190 points
+  average: 6871 points
+
+

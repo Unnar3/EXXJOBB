@@ -1,0 +1,92 @@
+HALLWAY
+
+
+##################################################################
+PARAMS:
+
+# Compression class params
+VoxelLeafSize           : 0.02,
+SVVoxelResolution       : 0.04,
+SVSeedResolution        : 0.10,
+SVColorImportance       : 0.1,
+SVSpatialImportance     : 5.0,
+RWHullMaxDist           : 0.1,
+hullAlpha               : 0.03,
+
+# Strand ransac params
+disjoinedSet            : 10,
+octree_res              : 1.0,
+normal_neigbourhood     : 0.05,
+inlier_threshold        : 0.15,
+angle_threshold         : 0.5,
+add_threshold           : 0.1,
+connectedness_res       : 0.15,
+distance_threshold      : 0.0,
+
+# Reconstruction
+GP3SearchRad            : 10.0,
+GP3Mu                   : 3.5,
+GP3MaxNearestNeighbours : 50,
+GP3Ksearch              : 15,
+
+# TOPICS
+TOPIC_POINT_CLOUD       : "/camera/depth_registered/points",
+HZ                      : 20,
+
+###################################################################
+TIME:
+voxelGridFilter
+  min: 0.0173996 sec
+  max: 0.0260538 sec
+  average: 0.0215981 sec
+ransac
+  min: 0.0168255 sec
+  max: 0.491914 sec
+  average: 0.162216 sec
+Project to Plane
+  min: 5.2846e-05 sec
+  max: 0.00112047 sec
+  average: 0.000415439 sec
+Density measure
+  min: 0.00209903 sec
+  max: 0.0897445 sec
+  average: 0.0258026 sec
+Concave Hull
+  min: 0.00931921 sec
+  max: 0.239746 sec
+  average: 0.0893864 sec
+Simplify Concave Hull
+  min: 2.4039e-05 sec
+  max: 0.00129203 sec
+  average: 0.000329886 sec
+Super Voxels
+  min: 0.00325015 sec
+  max: 0.0848685 sec
+  average: 0.0313954 sec
+Compression
+  min: 0.0496156 sec
+  max: 0.90653 sec
+  average: 0.33115 sec
+
+Triangulation
+  min: 3.5e-07 sec
+  max: 0.26503 sec
+  average: 0.0468089 sec
+Fix triangulation
+  min: 0 sec
+  max: 0 sec
+  average: -nan sec
+Reconstruction
+  min: 3.5e-07 sec
+  max: 0.00174282 sec
+  average: 0.000410112 sec
+
+
+#############################################################
+COMPRESSION:
+
+Compression
+  min: 134 points
+  max: 15140 points
+  average: 5380 points
+

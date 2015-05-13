@@ -37,6 +37,43 @@ typedef pcl::PointCloud<PointT> PointCloudT;
 typedef pcl::PointCloud<PointNT> PointNCloudT;
 using namespace EXX::params;
 
+class compressionMeasure{
+    int min;
+    int max;
+    std::vector<int> points;
+public:
+    void addNew(int p){
+        if ( points.size() == 0 ){
+            min = p;
+            max = p;
+        } else if ( p < min ){
+            min = p;
+        } else if ( p > max ){
+            max = p;
+        }
+        points.push_back(p);
+    }
+    int getMin(){
+        return min;
+    }
+    int getMax(){
+        return max;
+    }
+    int getAverage(){
+        int sum = 0;
+        for (auto i : points){
+            sum += i;
+        }
+        return sum/points.size();
+    }
+    void printStat(){
+        std::cout << "Compression" << std::endl;
+        std::cout << "  min: " << getMin() << " points" << std::endl;
+        std::cout << "  max: " << getMax() << " points" << std::endl;
+        std::cout << "  average: " << getAverage() << " points" << std::endl;
+    }
+};
+
 class timeMeasurement
 {
     std::string name;
@@ -90,7 +127,8 @@ private:
     ros::Publisher point_cloud_publisher;
     EXX::compression cmprs;
     primitive_params params;
-    timeMeasurement comp, vox, rans, pp, dens, ch, sch, sv;
+    timeMeasurement comp, vox, rans, pp, dens, ch, sch, sv, tria, ftria, reco;
+    compressionMeasure cmeas;
 
 public:
     TestCompression()
@@ -105,6 +143,10 @@ public:
         cmprs.setSVSpatialImportance(loadParam<double>("SVSpatialImportance", nh));
         cmprs.setRWHullMaxDist(loadParam<double>("RWHullMaxDist", nh));
         cmprs.setHULLAlpha(loadParam<double>("hullAlpha", nh));
+        cmprs.setGP3SearchRad( loadParam<double>("GP3SearchRad", nh) );
+        cmprs.setGP3Mu( loadParam<double>("GP3Mu", nh) );
+        cmprs.setGP3MaxNearestNeighbours( loadParam<double>("GP3MaxNearestNeighbours", nh) );
+        cmprs.setGP3Ksearch( loadParam<double>("GP3Ksearch", nh) );
 
         params.number_disjoint_subsets = loadParam<int>("disjoinedSet", nh);
         params.octree_res              = loadParam<double>("octree_res", nh);
@@ -125,6 +167,9 @@ public:
         sch.setName("Simplify Concave Hull");
         sv.setName("Super Voxels");
         comp.setName("Compression");
+        tria.setName("Triangulation");
+        ftria.setName("Fix triangulation");
+        reco.setName("Reconstruction");
     }
 
     void testCompression()
@@ -151,6 +196,10 @@ public:
         sch.printStat();
         sv.printStat();
         comp.printStat();
+        tria.printStat();
+        ftria.printStat();
+        reco.printStat();
+        cmeas.printStat();
     }
 
     void performCompression(PointCloudT::Ptr cloud)
@@ -158,6 +207,7 @@ public:
         // Load all params for compression and Ransac
         // VOXEL GRID FILTER
         ros::Time t_v1,t_v2,t_r1,t_r2,t_p1,t_p2,t_ch1,t_ch2,t_d1,t_d2,t_sh1,t_sh2,t_sv1,t_sv2;
+        ros::Time t_t1, t_t2, t_st1, t_st2, t_re1, t_re2;
         PointCloudT::Ptr voxel_cloud (new PointCloudT ());
         t_v1 = ros::Time::now();
         cmprs.voxelGridFilter(cloud, voxel_cloud);
@@ -235,6 +285,32 @@ public:
         t_sv2 = ros::Time::now();
         sv.addDuration(t_sv2-t_sv1);
         comp.addDuration(t_sv2 - t_v1);
+
+        std::vector<float> gp3_rad;
+        for (auto i : dDesc){
+            gp3_rad.push_back(i.gp3_search_rad);
+        }
+
+        int i = 0;
+        i += nonPlanar->points.size();
+        for (auto j : super_planes){
+            i += j->points.size();
+        }
+        for (auto j : simplified_hulls){
+            i += j->points.size();
+        }
+        cmeas.addNew(i);
+
+        std::vector<EXX::cloudMesh> cmesh;
+        t_t1 = ros::Time::now();
+        cmprs.greedyProjectionTriangulationPlanes(nonPlanar, super_planes, simplified_hulls, cmesh, gp3_rad);
+        t_t2 = ros::Time::now();
+        tria.addDuration(t_t2-t_t1);
+        t_st1 = ros::Time::now();
+        cmprs.improveTriangulation(cmesh, super_planes, simplified_hulls);
+        t_st2 = ros::Time::now();
+        tria.addDuration(t_st2-t_st1);
+        reco.addDuration(t_st2-t_st1);
         cloudPublish( nonPlanar, super_planes, simplified_hulls, dDesc );
     }
 
