@@ -69,24 +69,24 @@ Compression
   average: 0.33115 sec
 
 Triangulation
-  min: 3.5e-07 sec
-  max: 0.26503 sec
-  average: 0.0468089 sec
+  min: 0.00291271 sec
+  max: 0.258973 sec
+  average: 0.091697 sec
 Fix triangulation
-  min: 0 sec
-  max: 0 sec
-  average: -nan sec
+  min: 3.77e-07 sec
+  max: 0.001636 sec
+  average: 0.000401575 sec
 Reconstruction
-  min: 3.5e-07 sec
-  max: 0.00174282 sec
-  average: 0.000410112 sec
+  min: 0.00291349 sec
+  max: 0.259563 sec
+  average: 0.0920999 sec
 
 
 #############################################################
 COMPRESSION:
 
 Compression
-  min: 134 points
-  max: 15140 points
-  average: 5380 points
+  min: Uncompressed: 235277 Compressed: 15275 ratio: 15.4028
+  max: Uncompressed: 269269 Compressed: 131 ratio: 2055.49
+  average: Uncompressed: 257737 Compressed: 5415 ratio: 193.45
 

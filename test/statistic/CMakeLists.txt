@@ -36,3 +36,5 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 add_executable(test_statistic src/test_statistic.cpp)
 target_link_libraries(test_statistic ${catkin_LIBRARIES} ${QT_LIBRARIES} compression features libvtkCommon.so libvtkFiltering.so libvtkGraphics.so)
+add_executable(test_statistic_clouds src/test_statistic_clouds.cpp)
+target_link_libraries(test_statistic_clouds ${catkin_LIBRARIES} ${QT_LIBRARIES} compression features libvtkCommon.so libvtkFiltering.so libvtkGraphics.so)

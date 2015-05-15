@@ -11,6 +11,11 @@ namespace EXX{
 		T sigmoid( T ratio, T slope ){
 			return 1 / ( 1 + std::exp(-slope*(ratio - 0.5)));
 		}
+
+		template<typename T>
+		T fast_sigmoid( T ratio, T slope ){
+			return (slope+1)/2 * (2*ratio-1) / (1+std::abs(slope*(2*ratio+1))) + 0.5;
+		}
 	}
 
 	namespace params{

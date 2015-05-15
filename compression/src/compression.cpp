@@ -381,7 +381,7 @@ namespace EXX{
 			float area = x * y;
 			float max_points = area / ( v_leaf_size_ * v_leaf_size_ ); 
 			float pRatio = float(planes[i]->points.size()) / max_points;
-			dens.seed_res = std::min( std::max( std::min( x, y ) / 5.0f * utils::sigmoid(pRatio, 3.0f), v_leaf_size_), sv_seed_res_ );
+			dens.seed_res = std::min( std::max( std::min( x, y ) / 5.0f * utils::fast_sigmoid(pRatio, 3.0f), v_leaf_size_), sv_seed_res_ );
 			dens.voxel_res = std::min( dens.seed_res, sv_voxel_res_ );
 			dens.rw_max_dist = std::min( dens.seed_res / 2.0f, rw_hull_max_dist_ );
 			dens.gp3_search_rad = std::min( 2.2f * utils::l2_norm(dens.seed_res), gp3_search_rad_ );

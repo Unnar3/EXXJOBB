@@ -208,16 +208,14 @@ public:
         std::string room = loadParam<std::string>("Room", nh);
         auto sweep = SimpleXMLParser<PointT>::loadRoomFromXML("/home/unnar/catkin_ws/src/Metarooms/room_"+room+"/room.xml");
         
-        for (size_t i = 0; i < sweep.vIntermediateRoomClouds.size(); i++){
-        // for (size_t i = 0; i < 10; i++){
-            cloud = sweep.vIntermediateRoomClouds[i];
-            tf::StampedTransform rotationTF = sweep.vIntermediateRoomCloudTransforms[i];
-            //pcl_ros::transformPointCloud(*cloud, *cloud, rotationTF);
+        // ROOM 3
+        // int idx = 12;
+        int idx = loadParam<int>("idx", nh);;
+        cloud = sweep.vIntermediateRoomClouds[idx];
+        std::vector<int> indices;
+        pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
+        performCompression(cloud);
 
-            std::vector<int> indices;
-            pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
-            performCompression(cloud);
-        }
         vox.printStat();
         rans.printStat();
         pp.printStat();
