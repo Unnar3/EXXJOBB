@@ -502,7 +502,7 @@ namespace EXX{
 
 	}
 
-	void compression::improveTriangulation2(std::vector<cloudMesh> &cm, vPointCloudT &planes, vPointCloudT &hulls){
+	void compression::improveTriangulation2(std::vector<cloudMesh> &cm, vPointCloudT &planes, vPointCloudT &hulls,  std::vector<std::vector<float> > &normals){
 
 		int inlier_cnt = 0;
 		std::vector<uint32_t> points;
@@ -510,7 +510,6 @@ namespace EXX{
 		std::vector<int> polys1;
 		std::vector<int> polys2;
 		std::vector<PointT> tri;
-		std::vector<float> baseNorm;
 		std::vector<float> tmpNorm;
 		int bcount = 0;
 
@@ -522,12 +521,8 @@ namespace EXX{
 		for ( size_t i = 0; i < cm.size()-1; ++i ){
 			inlier_cnt = planes.at(i)->points.size();
 			polys.clear();
-
-			for(auto k : cm.at(i).mesh.polygons[0].vertices){
-				tri.push_back( planes.at(i)->points.at(k) );
-			}
-			baseNorm = utils::triNorm(tri.at(0), tri.at(1), tri.at(2));
-
+			polys1.clear();
+			polys2.clear();
 
 			for ( size_t j = 0; j < cm.at(i).mesh.polygons.size(); ++j ){
 				points.clear();
@@ -541,14 +536,15 @@ namespace EXX{
 					}
 				}
 
-				if ( bcount > 1 ){ // Two or more boundaryboints forming a triangle
+				if ( bcount > 2 ){ // Two or more boundaryboints forming a triangle
 					points = cm[i].mesh.polygons[j].vertices;
 					std::sort(points.begin(), points.end());
 					for(auto k : points){
-						tri.push_back( planes.at(i)->points.at(k) );
+						tri.push_back( cm.at(i).cloud->points.at(k) );
 					}
 					tmpNorm = utils::triNorm(tri.at(0), tri.at(1), tri.at(2));
-					if( utils::vecDot(baseNorm, tmpNorm) > 0 ){
+					// std::cout << "tmpNorm: "<< tmpNorm[0] << ", "<< tmpNorm[1] << ", "<< tmpNorm[2] << std::endl;
+					if( utils::vecDot(normals[i], tmpNorm) > 0 ){
 						polys1.push_back(j);
 					} else {
 						polys2.push_back(j);
@@ -556,16 +552,10 @@ namespace EXX{
 				}
 
 			}
-			if(polys1.size() > polys2.size()){
-				std::sort(polys1.begin(), polys1.end(), std::greater<int>());
-				for ( auto j : polys1 ){
-					cm[i].mesh.polygons.erase(cm[i].mesh.polygons.begin() + j);
-				}
-			} else {
-				std::sort(polys2.begin(), polys2.end(), std::greater<int>());
-				for ( auto j : polys2 ){
-					cm[i].mesh.polygons.erase(cm[i].mesh.polygons.begin() + j);
-				}
+			// std::cout << "normalPlane: " << normals[i][0] << ", " << normals[i][1] << ", " << normals[i][2] << std::endl;
+			std::sort(polys1.begin(), polys1.end(), std::greater<int>());
+			for ( auto j : polys1 ){
+				cm[i].mesh.polygons.erase(cm[i].mesh.polygons.begin() + j);
 			}
 		}
 

@@ -13,10 +13,10 @@ hullAlpha               : 0.03,
 disjoinedSet            : 10,
 octree_res              : 1.0,
 normal_neigbourhood     : 0.05,
-inlier_threshold        : 0.1,
+inlier_threshold        : 0.05,
 angle_threshold         : 0.20,
 add_threshold           : 0.1,
-connectedness_res       : 0.1,
+connectedness_res       : 0.2,
 distance_threshold      : 0.0,
 
 # Reconstruction

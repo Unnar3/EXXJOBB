@@ -64,17 +64,25 @@ testApplication::~testApplication(void)
 }
 
 //-------------------------------------------------------------------------------------
-void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointCloudT::Ptr> planes, std::vector<PointCloudT::Ptr> hulls, std::vector<float> gp3_rad){
+void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointCloudT::Ptr> planes, std::vector<PointCloudT::Ptr> hulls, std::vector<float> gp3_rad, std::vector<std::vector<float> > normals){
     // Initialize the manual object if it hasnt been
     if (first){
         manual = mSceneMgr->createManualObject("manual");
+    }
+
+    for ( size_t i = 0; i < hulls.size(); ++i){
+        for ( size_t j = 0; j < hulls.at(i)->points.size(); ++j){
+            hulls.at(i)->points[j].r = 255;
+            hulls.at(i)->points[j].g = 255;
+            hulls.at(i)->points[j].b = 0;
+        }
     }
 
     std::vector<EXX::cloudMesh> cmesh;
     std::cout << "trian" << std::endl;
     cmprs.greedyProjectionTriangulationPlanes(nonPlanar, planes, hulls, cmesh, gp3_rad);
     std::cout << "impr" << std::endl;
-    cmprs.improveTriangulation(cmesh, planes, hulls);
+    cmprs.improveTriangulation2(cmesh, planes, hulls, normals);
     std::cout << "hmm" << std::endl;
     manual->clear();
     manual->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST);
@@ -134,7 +142,9 @@ void testApplication::point_cloud_callback(const exx_compression::planes& cloud_
     std::vector<PointCloudT::Ptr> planes;
     std::vector<PointCloudT::Ptr> hulls;
     std::vector<float> gp3_rad;
+    std::vector<std::vector<float> > normals;
     PointCloudT::Ptr nonPlanar (new PointCloudT ());
+    float k = 0;
 
     for ( auto i : cloud_msg.planes ){
         PointCloudT::Ptr cloud (new PointCloudT ());
@@ -152,9 +162,14 @@ void testApplication::point_cloud_callback(const exx_compression::planes& cloud_
         gp3_rad.push_back(i);
     }
 
+    for ( auto i : cloud_msg.normal ){
+        normals.push_back(i.normal); 
+    }
+    // normals = cloud_msg.normal;
+
     pcl::fromROSMsg (cloud_msg.nonPlanar, *nonPlanar);
 
-    testApplication::updateScene(nonPlanar, planes, hulls, gp3_rad);
+    testApplication::updateScene(nonPlanar, planes, hulls, gp3_rad, normals);
 }
 
 void testApplication::loadParams(){

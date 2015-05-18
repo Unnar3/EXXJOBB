@@ -2,6 +2,7 @@
 #include <pcl_ros/transforms.h>
 #include <exx_compression/compression.h>
 #include <exx_compression/planes.h>
+#include <exx_compression/normal.h>
 #include <dbscan/dbscan.h>
 #include <utils/utils.h>        
 #include <plane_features/plane_features.h>
@@ -342,7 +343,7 @@ public:
         t_st2 = ros::Time::now();
         ftria.addDuration(t_st2-t_st1);
         reco.addDuration(t_st2-t_t1);
-        cloudPublish( nonPlanar, super_planes, simplified_hulls, dDesc );
+        cloudPublish( nonPlanar, super_planes, simplified_hulls, dDesc, normal);
     }
 
 private:
@@ -353,12 +354,14 @@ private:
         // testCompression(cloud);
     }
 
-    void cloudPublish(PointCloudT::Ptr nonPlanar ,std::vector<PointCloudT::Ptr> &planes, std::vector<PointCloudT::Ptr> &hulls, std::vector<EXX::densityDescriptor> &dDesc)
+    void cloudPublish(PointCloudT::Ptr nonPlanar ,std::vector<PointCloudT::Ptr> &planes, std::vector<PointCloudT::Ptr> &hulls, std::vector<EXX::densityDescriptor> &dDesc,std::vector<Eigen::Vector4d> &normal)
     {
         exx_compression::planes pmsgs;
+        exx_compression::normal norm;
         sensor_msgs::PointCloud2 output_p;
         sensor_msgs::PointCloud2 output_h;
         sensor_msgs::PointCloud2 output;
+        Eigen::Vector4f tmpnormal;
         
         for (size_t i = 0; i < planes.size(); ++i){
             pcl::toROSMsg(*planes[i] , output_p);
@@ -366,6 +369,11 @@ private:
             pmsgs.planes.push_back(output_p);
             pmsgs.hulls.push_back(output_h);
             pmsgs.gp3_rad.push_back(dDesc[i].gp3_search_rad);
+            tmpnormal = normal[i].cast<float>();
+            norm.normal.push_back(tmpnormal[0]);
+            norm.normal.push_back(tmpnormal[1]);
+            norm.normal.push_back(tmpnormal[2]);
+            pmsgs.normal.push_back(norm);
         }
         pcl::toROSMsg(*nonPlanar , output);
         pmsgs.nonPlanar = output;

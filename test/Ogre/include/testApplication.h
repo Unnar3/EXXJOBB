@@ -61,7 +61,7 @@ protected:
     virtual void createScene(void);
     virtual void loadBaseCloud();
     virtual void loadParams();
-    void updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointCloudT::Ptr> planes, std::vector<PointCloudT::Ptr> hulls, std::vector<float> gp3_rad);
+    void updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointCloudT::Ptr> planes, std::vector<PointCloudT::Ptr> hulls, std::vector<float> gp3_rad, std::vector<std::vector<float> > normals);
     void point_cloud_callback(const exx_compression::planes& cloud_msg);
 
 };

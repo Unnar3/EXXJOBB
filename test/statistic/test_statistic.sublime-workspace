@@ -4,6 +4,14 @@
 		"selected_items":
 		[
 			[
+				"tmp",
+				"tmpnormal"
+			],
+			[
+				"norma",
+				"normal"
+			],
+			[
 				"min",
 				"minIdx"
 			],
@@ -134,10 +142,6 @@
 			[
 				"planeF",
 				"plane_features"
-			],
-			[
-				"norma",
-				"normalInd"
 			],
 			[
 				"ve",
@@ -491,7 +495,7 @@
 			"file": "src/test_statistic_clouds.cpp",
 			"settings":
 			{
-				"buffer_size": 13432,
+				"buffer_size": 13823,
 				"line_ending": "Unix"
 			}
 		},
@@ -515,7 +519,7 @@
 			"file": "include/parameters/parameters.yaml",
 			"settings":
 			{
-				"buffer_size": 1042,
+				"buffer_size": 1043,
 				"line_ending": "Unix"
 			}
 		},
@@ -921,7 +925,7 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 4,
 			"sheets":
 			[
 				{
@@ -1019,15 +1023,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 13432,
+						"buffer_size": 13823,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								11891,
-								11891
+								13561,
+								13561
 							]
 						],
 						"settings":
@@ -1096,10 +1100,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 6170.0,
+						"translation.y": 6653.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
@@ -1282,15 +1286,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1042,
+						"buffer_size": 1043,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								793,
-								793
+								397,
+								397
 							]
 						],
 						"settings":
@@ -1360,7 +1364,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 0,
 					"type": "text"
 				},
 				{
