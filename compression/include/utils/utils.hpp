@@ -16,6 +16,36 @@ namespace EXX{
 		T fast_sigmoid( T ratio, T slope ){
 			return (slope+1)/2 * (2*ratio-1) / (1+std::abs(slope*(2*ratio+1))) + 0.5;
 		}
+
+		template<typename T>
+		std::vector<float> vecDiff(T a, T b){
+			std::vector<float> d;
+			d.push_back(b.x-a.x);
+			d.push_back(b.y-a.y);
+			d.push_back(b.z-a.z);
+			return d;
+		}
+
+		template<typename T>
+		std::vector<T> vecCross(std::vector<T> a, std::vector<T> b){
+			std::vector<T> c;
+			c.push_back(  a[1]*b[2] - a[2]*b[1] );
+			c.push_back(  a[2]*b[0] - a[0]*b[2] );
+			c.push_back(  a[0]*b[1] - a[1]*b[0] );
+			return c;
+		}
+
+		template<typename T>
+		T vecDot(std::vector<T> a, std::vector<T> b){
+			return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+		}
+
+		template<typename T>
+		std::vector<float> triNorm(T a, T b, T c){
+			std::vector<float> d;
+			d = vecCross( vecDiff(a,b), vecDiff(a,c) );
+			return d;
+		}
 	}
 
 	namespace params{

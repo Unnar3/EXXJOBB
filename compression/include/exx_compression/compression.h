@@ -117,6 +117,7 @@ public:
 	void greedyProjectionTriangulationPlanes(PointCloudT::Ptr nonPlanar, vPointCloudT *planes, vPointCloudT *hulls, std::vector<cloudMesh> *cm,std::vector<densityDescriptor> &dDesc);
 	void greedyProjectionTriangulationPlanes(PointCloudT::Ptr nonPlanar, vPointCloudT &planes, vPointCloudT &hulls, std::vector<cloudMesh> &cm,std::vector<float> &dDesc);
 	void improveTriangulation(std::vector<cloudMesh> &cm, vPointCloudT &planes, vPointCloudT &hulls);
+	void improveTriangulation2(std::vector<cloudMesh> &cm, vPointCloudT &planes, vPointCloudT &hulls);
 
 	// SET METHODS
 	void setVoxelLeafSize(float leaf){ v_leaf_size_ = leaf; }

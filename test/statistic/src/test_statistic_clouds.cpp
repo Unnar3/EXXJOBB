@@ -380,12 +380,9 @@ int main(int argc, char **argv) {
     TestCompression test;
     
     ros::Rate loop_rate(loadParam<int>("HZ", test.nh ));
-    // while(ros::ok()) {
-    //     ros::spinOnce();
-    //     loop_rate.sleep();
-    // }
-    // 
     test.testCompression();
-
+    while(ros::ok()) {
+        loop_rate.sleep();
+    }
     return 0;
 }

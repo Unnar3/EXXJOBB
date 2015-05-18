@@ -30,6 +30,7 @@ This source file is part of the
 #include <pcl/search/kdtree.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/PolygonMesh.h>
+#include <simple_xml_parser.h>
 
 #include <OgreManualObject.h>
 #include <CEGUI/CEGUI.h>
@@ -54,8 +55,6 @@ TutorialApplication::TutorialApplication(void)
     TutorialApplication::loadParams();
     std::cout << "dafuck" << std::endl;
     TutorialApplication::setConfigPath(configPath_);
-
-    point_cloud_subscriber   = nh.subscribe(params::load<std::string>("TOPIC_POINT_CLOUD", nh), 1, &TutorialApplication::point_cloud_callback, this);
 }
 //-------------------------------------------------------------------------------------
 TutorialApplication::~TutorialApplication(void)
@@ -219,19 +218,17 @@ void TutorialApplication::updateScene(PointCloudT::Ptr cloud){
 void TutorialApplication::createScene(void){}
 
 void TutorialApplication::loadBaseCloud(){
-    baseCloud_ = PointCloudT::Ptr (new PointCloudT ());
-    if( pcl::io::loadPCDFile (cloudPath_, *baseCloud_) == -1 ){
-        PCL_ERROR("Could not load base cloud, baseCloud_ is empty.");
-    } else {
-        std::cout << "baseCloud_ loaded;" << std::endl;
-    }
-}
-
-void TutorialApplication::point_cloud_callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg)
-{
     PointCloudT::Ptr cloud (new PointCloudT ());
-    pcl::fromROSMsg (*cloud_msg, *cloud);
-    TutorialApplication::updateScene(cloud);
+    std::string room = params::load<std::string>("Room", nh);
+    auto sweep = SimpleXMLParser<PointT>::loadRoomFromXML("/home/unnar/catkin_ws/src/Metarooms/room_"+room+"/room.xml");
+    
+    // ROOM 3
+    // int idx = 12;
+    int idx = params::load<int>("idx", nh);;
+    cloud = sweep.vIntermediateRoomClouds[idx];
+    std::vector<int> indices;
+    pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
+    updateScene(cloud);
 }
 
 void TutorialApplication::loadParams(){
@@ -275,22 +272,8 @@ extern "C" {
                 e.getFullDescription().c_str() << std::endl;
         }
 
-        ros::Time begin;
-        ros::Duration timeout(1.0);
-        while(ros::ok()) {
-            if ( o > 100 ){
-                break;
-            }
-            begin = ros::Time::now();
-            ros::spinOnce();
-            while (ros::Time::now() - begin < timeout){
-                app.renderOneFrame();
-            }
-            o++;
-            //loop_rate.sleep();
-        }
-
-        app.destroyScene();
+        app.loadBaseCloud();
+        app.renderFrames();
 
         return 0;
     }

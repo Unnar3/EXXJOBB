@@ -50,10 +50,10 @@ class TutorialApplication : public BaseApplication
 public:
     TutorialApplication(void);
     virtual ~TutorialApplication(void);
+    virtual void loadBaseCloud();
 
 protected:
     virtual void createScene(void);
-    virtual void loadBaseCloud();
     virtual void loadParams();
     void updateScene(PointCloudT::Ptr cloud);
     void point_cloud_callback(const sensor_msgs::PointCloud2ConstPtr& cloud_msg);

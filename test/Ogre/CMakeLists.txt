@@ -16,7 +16,11 @@ find_package(catkin REQUIRED COMPONENTS
   	pcl_ros
   	exx_compression
   	ransac_primitives
+  	metaroom_xml_parser
+  	qt_build
 )
+
+rosbuild_prepare_qt4(QtCore QtXml)
 
 #add_message_files(FILES
 #	distPose.msg
@@ -28,7 +32,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package(
 	DEPENDS
-	CATKIN_DEPENDS message_runtime exx_compression
+	CATKIN_DEPENDS message_runtime exx_compression qt_build libqt4-dev
 )
 
 ###################################################################

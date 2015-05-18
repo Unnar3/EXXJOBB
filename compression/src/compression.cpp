@@ -382,6 +382,7 @@ namespace EXX{
 			float max_points = area / ( v_leaf_size_ * v_leaf_size_ ); 
 			float pRatio = float(planes[i]->points.size()) / max_points;
 			dens.seed_res = std::min( std::max( std::min( x, y ) / 5.0f * utils::fast_sigmoid(pRatio, 3.0f), v_leaf_size_), sv_seed_res_ );
+			// dens.seed_res = sv_seed_res_;
 			dens.voxel_res = std::min( dens.seed_res, sv_voxel_res_ );
 			dens.rw_max_dist = std::min( dens.seed_res / 2.0f, rw_hull_max_dist_ );
 			dens.gp3_search_rad = std::min( 2.2f * utils::l2_norm(dens.seed_res), gp3_search_rad_ );
@@ -496,6 +497,75 @@ namespace EXX{
 			std::sort(polys.begin(), polys.end(), std::greater<int>());
 			for ( auto j : polys ){
 				cm[i].mesh.polygons.erase(cm[i].mesh.polygons.begin() + j);
+			}
+		}
+
+	}
+
+	void compression::improveTriangulation2(std::vector<cloudMesh> &cm, vPointCloudT &planes, vPointCloudT &hulls){
+
+		int inlier_cnt = 0;
+		std::vector<uint32_t> points;
+		std::vector<int> polys;
+		std::vector<int> polys1;
+		std::vector<int> polys2;
+		std::vector<PointT> tri;
+		std::vector<float> baseNorm;
+		std::vector<float> tmpNorm;
+		int bcount = 0;
+
+		int max = 0;
+		int min = 0;
+
+		// find the normal of first triangle consisting of two boundary points and interior point.
+
+		for ( size_t i = 0; i < cm.size()-1; ++i ){
+			inlier_cnt = planes.at(i)->points.size();
+			polys.clear();
+
+			for(auto k : cm.at(i).mesh.polygons[0].vertices){
+				tri.push_back( planes.at(i)->points.at(k) );
+			}
+			baseNorm = utils::triNorm(tri.at(0), tri.at(1), tri.at(2));
+
+
+			for ( size_t j = 0; j < cm.at(i).mesh.polygons.size(); ++j ){
+				points.clear();
+				tri.clear();
+				bcount = 0;
+
+				// Count number of boundary points in the triangle
+				for ( auto k : cm[i].mesh.polygons[j].vertices){
+					if (k >= inlier_cnt){
+						bcount++;
+					}
+				}
+
+				if ( bcount > 1 ){ // Two or more boundaryboints forming a triangle
+					points = cm[i].mesh.polygons[j].vertices;
+					std::sort(points.begin(), points.end());
+					for(auto k : points){
+						tri.push_back( planes.at(i)->points.at(k) );
+					}
+					tmpNorm = utils::triNorm(tri.at(0), tri.at(1), tri.at(2));
+					if( utils::vecDot(baseNorm, tmpNorm) > 0 ){
+						polys1.push_back(j);
+					} else {
+						polys2.push_back(j);
+					}
+				}
+
+			}
+			if(polys1.size() > polys2.size()){
+				std::sort(polys1.begin(), polys1.end(), std::greater<int>());
+				for ( auto j : polys1 ){
+					cm[i].mesh.polygons.erase(cm[i].mesh.polygons.begin() + j);
+				}
+			} else {
+				std::sort(polys2.begin(), polys2.end(), std::greater<int>());
+				for ( auto j : polys2 ){
+					cm[i].mesh.polygons.erase(cm[i].mesh.polygons.begin() + j);
+				}
 			}
 		}
 
