@@ -55,6 +55,7 @@ testApplication::testApplication(void)
     cmprs.setGP3Mu( loadParam<double>("GP3Mu", nh) );
     cmprs.setGP3MaxNearestNeighbours( loadParam<double>("GP3MaxNearestNeighbours", nh) );
     cmprs.setGP3Ksearch( loadParam<double>("GP3Ksearch", nh) );
+    cmprs.setGP3MinAngle( loadParam<double>("GP3MinAngle", nh) );
 
     point_cloud_subscriber   = nh.subscribe(loadParam<std::string>("TOPIC_POINT_CLOUD", nh), 1, &testApplication::point_cloud_callback, this);
 }
@@ -73,7 +74,7 @@ void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointC
     for ( size_t i = 0; i < hulls.size(); ++i){
         for ( size_t j = 0; j < hulls.at(i)->points.size(); ++j){
             hulls.at(i)->points[j].r = 255;
-            hulls.at(i)->points[j].g = 255;
+            hulls.at(i)->points[j].g = 255-2*j;
             hulls.at(i)->points[j].b = 0;
         }
     }
@@ -84,6 +85,11 @@ void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointC
     std::cout << "impr" << std::endl;
     cmprs.improveTriangulation2(cmesh, planes, hulls, normals);
     std::cout << "hmm" << std::endl;
+
+
+    std::cout << "Normal: " << std::endl;
+    std::for_each(normals[0].begin(), normals[0].end(), [](float val){std::cout << " " << val;});
+    std::cout << " " << std::endl;
     manual->clear();
     manual->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST);
     
@@ -94,7 +100,7 @@ void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointC
 
     int pic = 0;
     Ogre::Real r, g, b;
-    for (std::vector<EXX::cloudMesh>::iterator ite = cmesh.begin(); ite < cmesh.end(); ++ite){
+    for (std::vector<EXX::cloudMesh>::iterator ite = cmesh.begin(); ite < cmesh.end()-1; ++ite){
 
         for (size_t i = 0; i < (*ite).cloud->points.size(); i++){
             manual->position((*ite).cloud->points[i].x, -(*ite).cloud->points[i].y, -(*ite).cloud->points[i].z);
