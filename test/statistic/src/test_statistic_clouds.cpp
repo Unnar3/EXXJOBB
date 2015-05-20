@@ -242,7 +242,8 @@ public:
         ros::Time t_t1, t_t2, t_st1, t_st2, t_re1, t_re2;
         PointCloudT::Ptr voxel_cloud (new PointCloudT ());
         t_v1 = ros::Time::now();
-        cmprs.voxelGridFilter(cloud, voxel_cloud);
+        // cmprs.voxelGridFilter(cloud, voxel_cloud);
+        voxel_cloud = cloud;
         t_v2 = ros::Time::now();
         vox.addDuration(t_v2 - t_v1);
 

@@ -2,8 +2,8 @@
 
 # Compression class params
 VoxelLeafSize           : 0.005,
-SVVoxelResolution       : 0.005,
-SVSeedResolution        : 0.2,
+SVVoxelResolution       : 0.0005,
+SVSeedResolution        : 0.001,
 SVColorImportance       : 0.1,
 SVSpatialImportance     : 5.0,
 RWHullMaxDist           : 0.1,
@@ -21,9 +21,9 @@ distance_threshold      : 0.0,
 
 # Reconstruction
 GP3SearchRad            : 10.0,
-GP3Mu                   : 3.5,
-GP3MaxNearestNeighbours : 50,
-GP3Ksearch              : 15,
+GP3Mu                   : 500,
+GP3MaxNearestNeighbours : 300,
+GP3Ksearch              : 300,
 
 # TOPICS
 TOPIC_POINT_CLOUD       : "/camera/depth_registered/points",
