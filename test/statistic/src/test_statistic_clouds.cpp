@@ -242,8 +242,8 @@ public:
         ros::Time t_t1, t_t2, t_st1, t_st2, t_re1, t_re2;
         PointCloudT::Ptr voxel_cloud (new PointCloudT ());
         t_v1 = ros::Time::now();
-        // cmprs.voxelGridFilter(cloud, voxel_cloud);
-        voxel_cloud = cloud;
+        cmprs.voxelGridFilter(cloud, voxel_cloud);
+        // voxel_cloud = cloud;
         t_v2 = ros::Time::now();
         vox.addDuration(t_v2 - t_v1);
 
@@ -334,16 +334,18 @@ public:
         }
         cmeas.addNew(nPoints, i);
 
-        std::vector<EXX::cloudMesh> cmesh;
-        t_t1 = ros::Time::now();
-        cmprs.greedyProjectionTriangulationPlanes(nonPlanar, super_planes, simplified_hulls, cmesh, gp3_rad);
-        t_t2 = ros::Time::now();
-        tria.addDuration(t_t2-t_t1);
-        t_st1 = ros::Time::now();
-        cmprs.improveTriangulation(cmesh, super_planes, simplified_hulls);
-        t_st2 = ros::Time::now();
-        ftria.addDuration(t_st2-t_st1);
-        reco.addDuration(t_st2-t_t1);
+        cmprs.cornerMatching(super_planes, simplified_hulls, normal);
+
+        // std::vector<EXX::cloudMesh> cmesh;
+        // t_t1 = ros::Time::now();
+        // cmprs.greedyProjectionTriangulationPlanes(nonPlanar, super_planes, simplified_hulls, cmesh, gp3_rad);
+        // t_t2 = ros::Time::now();
+        // tria.addDuration(t_t2-t_t1);
+        // t_st1 = ros::Time::now();
+        // cmprs.improveTriangulation(cmesh, super_planes, simplified_hulls);
+        // t_st2 = ros::Time::now();
+        // ftria.addDuration(t_st2-t_st1);
+        // reco.addDuration(t_st2-t_t1);
         cloudPublish( nonPlanar, super_planes, simplified_hulls, dDesc, normal);
     }
 

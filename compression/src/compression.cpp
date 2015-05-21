@@ -304,58 +304,67 @@ namespace EXX{
 
 
 	void compression::cornerMatching(vPointCloudT &planes, vPointCloudT &hulls, std::vector<Eigen::Vector4d> &coeff){
-
-		std::cout << "corner" << std::endl;
 		Eigen::VectorXd line;
 		Eigen::Vector4d point;
+		point(3) = 0;
 		Eigen::Vector4d l_point;
+		l_point(3) = 0;
 		Eigen::Vector4d d_point;
+		d_point(3) = 0;
 		pcl::ProjectInliers<PointT> proj;
+		proj.setModelType (pcl::SACMODEL_LINE);
 		pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
+		pcl::PointIndices::Ptr inliers2 (new pcl::PointIndices ());
 		pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
-		std::cout << "loop" << std::endl;
-		for (size_t i = 1; i < coeff.size(); ++i){
-			pcl::planeWithPlaneIntersection( coeff.at(i), coeff.at(i-1), line );
-			l_point(0) = line(0);
-			l_point(1) = line(1);
-			l_point(2) = line(2);
-			l_point(3) = 0;
-			d_point(0) = line(3);
-			d_point(1) = line(4);
-			d_point(2) = line(5);
-			d_point(3) = 0;
-			std::cout << "inner loop" << std::endl;
-			for ( size_t j = 0; j < hulls.at(i)->points.size(); ++j ){
-				point(0) = hulls.at(i)->points.at(j).x;
-				point(1) = hulls.at(i)->points.at(j).y;
-				point(2) = hulls.at(i)->points.at(j).z;
-				point(3) = 0;
-				std::cout << "if" << std::endl;
-				if ( pcl::sqrPointToLineDistance(point.cast<float>(), l_point.cast<float>(), d_point.cast<float>()) < 0.1 ){
-					planes.at(i)->points.push_back( hulls.at(i)->points.at(j) );
-					inliers->indices.push_back(j);
-				}
-				std::cout << "finished if" << std::endl;
+		coefficients->values.resize(6);
+
+		auto eigenToCoeff = [&coefficients, &line](){
+			for (size_t i = 0; i < line.size(); ++i){
+				coefficients->values[i] = line(i);
 			}
-			std::cout << "finished inner for" << std::endl;
-			coefficients->values.push_back( line(0) );
-			std::cout << "hmmm" << std::endl;
-			coefficients->values.push_back( line(1) );
-			coefficients->values.push_back( line(2) );
-			coefficients->values.push_back( line(3) );
-			coefficients->values.push_back( line(4) );
-			coefficients->values.push_back( line(5) );
-			std::cout << "project" << std::endl;
-			proj.setModelType (pcl::SACMODEL_LINE);
-			proj.setInputCloud (hulls.at(i));
-			proj.setIndices(inliers);
+		};
+		auto pointToEigen = [&point](PointT& p){
+			point(0) = p.x;
+			point(1) = p.y;
+			point(2) = p.z;
+		};
+		auto projectToLine = [&proj, &coefficients](PointCloudT::Ptr hull, pcl::PointIndices::Ptr inl){
+			proj.setInputCloud (hull);
+			proj.setIndices(inl);
 			proj.setModelCoefficients (coefficients);
-			proj.filter (*hulls.at(i));	
-			coefficients->values.clear();		
+			proj.filter (*hull);
+			inl->indices.clear();
+			std::vector<int> tmpindices;
+			pcl::removeNaNFromPointCloud(*hull, *hull, tmpindices);
+		};
+
+		for (size_t i = 0; i < coeff.size()-1; ++i){
+			for (size_t k = i+1; k < coeff.size(); ++k){
+				pcl::planeWithPlaneIntersection( coeff.at(i), coeff.at(k), line );
+				l_point.head(3) = line.head(3);
+				d_point.head(3) = line.tail(3);
+				std::cout << "inner loop" << std::endl;
+
+				for ( size_t j = 0; j < hulls.at(i)->points.size(); ++j ){
+					pointToEigen(hulls.at(i)->points.at(j));
+					if ( pcl::sqrPointToLineDistance(point.cast<float>(), l_point.cast<float>(), d_point.cast<float>()) < 0.4 ){
+						planes.at(i)->points.push_back( hulls.at(i)->points.at(j) );
+						inliers->indices.push_back(j);
+					}
+				}
+				for ( size_t j = 0; j < hulls.at(k)->points.size(); ++j ){
+					pointToEigen(hulls.at(k)->points.at(j));
+					if ( pcl::sqrPointToLineDistance(point.cast<float>(), l_point.cast<float>(), d_point.cast<float>()) < 0.4 ){
+						planes.at(k)->points.push_back( hulls.at(k)->points.at(j) );
+						inliers2->indices.push_back(j);
+					}
+				}		
+				eigenToCoeff();
+				projectToLine(hulls.at(i), inliers);
+				projectToLine(hulls.at(k), inliers2);
+			}
 		}
-
 	}
-
 
 	void compression::getPlaneDensity( vPointCloudT &planes, vPointCloudT &hulls,  std::vector<densityDescriptor> &dDesc){
 
@@ -385,7 +394,7 @@ namespace EXX{
 			// dens.seed_res = sv_seed_res_;
 			dens.voxel_res = std::min( dens.seed_res, sv_voxel_res_ );
 			dens.rw_max_dist = std::min( dens.seed_res / 2.0f, rw_hull_max_dist_ );
-			dens.gp3_search_rad = std::min( 2.2f * utils::l2_norm(dens.seed_res), gp3_search_rad_ );
+			dens.gp3_search_rad = std::min( 3.0f * utils::l2_norm(dens.seed_res), gp3_search_rad_ );
 			dDesc.push_back( dens );
 		}
 

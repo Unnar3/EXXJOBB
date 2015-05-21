@@ -1,9 +1,9 @@
 {
 
 # Compression class params
-VoxelLeafSize           : 0.005,
-SVVoxelResolution       : 0.0005,
-SVSeedResolution        : 0.001,
+VoxelLeafSize           : 0.01,
+SVVoxelResolution       : 0.01,
+SVSeedResolution        : 0.02,
 SVColorImportance       : 0.1,
 SVSpatialImportance     : 5.0,
 RWHullMaxDist           : 0.1,
@@ -12,16 +12,16 @@ hullAlpha               : 0.03,
 # Strand ransac params
 disjoinedSet            : 10,
 octree_res              : 1.0,
-normal_neigbourhood     : 0.05,
-inlier_threshold        : 0.05,
-angle_threshold         : 0.20,
+normal_neigbourhood     : 0.15,
+inlier_threshold        : 0.15,
+angle_threshold         : 0.5,
 add_threshold           : 0.1,
 connectedness_res       : 0.2,
 distance_threshold      : 0.0,
 
 # Reconstruction
 GP3SearchRad            : 10.0,
-GP3Mu                   : 500,
+GP3Mu                   : 0.5,
 GP3MaxNearestNeighbours : 300,
 GP3Ksearch              : 300,
 
@@ -30,9 +30,9 @@ TOPIC_POINT_CLOUD       : "/camera/depth_registered/points",
 HZ                      : 20,
 
 #Single cloud
-# Room : "3",
+Room : "3",
 # idx  : 12, # min
-# idx  : 39, # max
+idx  : 39, # max
 # Room : "2",
 # idx  : 29,þ # min
 # idx  : 33, # max
@@ -46,6 +46,6 @@ HZ                      : 20,
 # idx  : 8, # max
 
 # Better boundary forcing
-Room : "2",
-idx  : 7,
+# Room : "2",
+# idx  : 7,
 }
