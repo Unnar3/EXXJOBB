@@ -12,6 +12,7 @@
 #include <simple_xml_parser.h>
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/Image.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/conversions.h>
 
@@ -248,7 +249,7 @@ public:
         vox.addDuration(t_v2 - t_v1);
 
         t_r1 = ros::Time::now();
-        params.min_shape  = voxel_cloud->points.size()*0.00005;
+        params.min_shape  = voxel_cloud->points.size()*0.05;
         params.inlier_min = params.min_shape;
 
         // Perform the compression        
@@ -335,6 +336,26 @@ public:
         cmeas.addNew(nPoints, i);
 
         cmprs.cornerMatching(super_planes, simplified_hulls, normal);
+        std::cout << "spes" << std::endl;
+        PointCloudT::Ptr cloudCorner (new PointCloudT ());
+        int rcol = 50;
+        for (size_t i = 0; i < super_planes.size(); ++i){
+            // for (size_t j = 0; j < super_planes[i]->points.size(); ++j){
+            //     super_planes[i]->points[j].r = 255-rcol;
+            //     super_planes[i]->points[j].g = 150;
+            //     super_planes[i]->points[j].b = rcol;
+            // }
+            // for (auto& pt : simplified_hulls[i]->points){
+            //     pt.r = 255-rcol;
+            //     pt.g = 150;
+            //     pt.b = rcol;
+            // }
+            *cloudCorner += *super_planes[i];
+            *cloudCorner += *simplified_hulls[i];
+            rcol += 50;
+        }
+        std::cout << "size super" << super_planes.size() << std::endl;
+        pcl::io::savePCDFileASCII ("/home/unnar/Desktop/test_pcd.pcd", *cloudCorner);
 
         // std::vector<EXX::cloudMesh> cmesh;
         // t_t1 = ros::Time::now();

@@ -313,27 +313,78 @@ namespace EXX{
 		d_point(3) = 0;
 		pcl::ProjectInliers<PointT> proj;
 		proj.setModelType (pcl::SACMODEL_LINE);
+		proj.setCopyAllData(true);
 		pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
 		pcl::PointIndices::Ptr inliers2 (new pcl::PointIndices ());
 		pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
 		coefficients->values.resize(6);
+		int ratioLim = 0.75;
 
 		auto eigenToCoeff = [&coefficients, &line](){
 			for (size_t i = 0; i < line.size(); ++i){
 				coefficients->values[i] = line(i);
 			}
 		};
-		auto pointToEigen = [&point](PointT& p){
+		auto pointToEigen = [](Eigen::Vector4d& point, PointT& p){
 			point(0) = p.x;
 			point(1) = p.y;
 			point(2) = p.z;
 		};
-		auto projectToLine = [&proj, &coefficients](PointCloudT::Ptr hull, pcl::PointIndices::Ptr inl){
-			proj.setInputCloud (hull);
+		auto positiveRatioLargerThan = [&ratioLim](int a, int b){
+			if ( a == 0 || b == 0){
+				return false;
+			} else if (a > b){
+				return a/b > ratioLim;
+			} else {
+				return b/a > ratioLim;
+			}
+		};
+
+		auto projectToLine = [&pointToEigen, &proj, &coefficients](PointCloudT::Ptr hull, PointCloudT::Ptr plane, pcl::PointIndices::Ptr inl){
+			
+			std::vector<Eigen::Vector4d> eigenVecs;
+			Eigen::Vector4d eigenVec;
+			eigenVec(3) = 0;
+			
+			// Store location of all points that will be projected.
+			for (auto i : inl->indices){
+				pointToEigen(eigenVec, hull->points.at(i));
+				std::cout << hull->points.at(i).x << " " << hull->points.at(i).y<<" " << hull->points.at(i).z << std::endl;
+				std::cout << eigenVec(0) << " "<< eigenVec(1) << " "<< eigenVec(2) << std::endl;
+				eigenVecs.push_back(eigenVec);
+			}
+
+			// Project the points.
+			PointCloudT::Ptr tmpCloud (new PointCloudT ());
+			proj.setInputCloud(hull);
 			proj.setIndices(inl);
-			proj.setModelCoefficients (coefficients);
-			proj.filter (*hull);
-			inl->indices.clear();
+			proj.setModelCoefficients(coefficients);
+			proj.filter(*hull);
+
+			Eigen::Vector4d projectedPoint;
+			projectedPoint(3) = 0;
+			Eigen::Vector4d vecDiff;
+			int numberPoints = 0;
+			double vecNorm = 0;
+			PointT newPoint;		
+			for (size_t i = 0; i < inl->indices.size(); ++i){
+				pointToEigen(projectedPoint, hull->points.at(inl->indices.at(i)));
+				vecDiff = eigenVecs[i] - projectedPoint;
+				vecNorm = vecDiff.norm();
+				if ( vecNorm > 0.02 ){ 
+					// Create points inbetween
+					numberPoints = std::ceil(vecNorm/0.03);
+					for (int j=1; j<numberPoints; ++j){	
+						newPoint.x = eigenVecs[i](0)-vecDiff(0)/numberPoints*j;
+						newPoint.y = eigenVecs[i](1)-vecDiff(1)/numberPoints*j;
+						newPoint.z = eigenVecs[i](2)-vecDiff(2)/numberPoints*j;
+						newPoint.r = 0;//hull->points.at(inl->indices.at(i)).r;
+						newPoint.g = 0;//hull->points.at(inl->indices.at(i)).g;
+						newPoint.b = 255;//hull->points.at(inl->indices.at(i)).b;
+						plane->points.push_back(newPoint);
+					}
+				}
+			}
 			std::vector<int> tmpindices;
 			pcl::removeNaNFromPointCloud(*hull, *hull, tmpindices);
 		};
@@ -343,25 +394,29 @@ namespace EXX{
 				pcl::planeWithPlaneIntersection( coeff.at(i), coeff.at(k), line );
 				l_point.head(3) = line.head(3);
 				d_point.head(3) = line.tail(3);
-				std::cout << "inner loop" << std::endl;
 
 				for ( size_t j = 0; j < hulls.at(i)->points.size(); ++j ){
-					pointToEigen(hulls.at(i)->points.at(j));
-					if ( pcl::sqrPointToLineDistance(point.cast<float>(), l_point.cast<float>(), d_point.cast<float>()) < 0.4 ){
+					pointToEigen(point, hulls.at(i)->points.at(j));
+					if ( pcl::sqrPointToLineDistance(point.cast<float>(), l_point.cast<float>(), d_point.cast<float>()) < 0.20*0.20 ){
 						planes.at(i)->points.push_back( hulls.at(i)->points.at(j) );
 						inliers->indices.push_back(j);
 					}
 				}
 				for ( size_t j = 0; j < hulls.at(k)->points.size(); ++j ){
-					pointToEigen(hulls.at(k)->points.at(j));
-					if ( pcl::sqrPointToLineDistance(point.cast<float>(), l_point.cast<float>(), d_point.cast<float>()) < 0.4 ){
+					pointToEigen(point, hulls.at(k)->points.at(j));
+					if ( pcl::sqrPointToLineDistance(point.cast<float>(), l_point.cast<float>(), d_point.cast<float>()) < 0.20*0.20 ){
 						planes.at(k)->points.push_back( hulls.at(k)->points.at(j) );
 						inliers2->indices.push_back(j);
 					}
 				}		
 				eigenToCoeff();
-				projectToLine(hulls.at(i), inliers);
-				projectToLine(hulls.at(k), inliers2);
+				if ( positiveRatioLargerThan(inliers->indices.size(), inliers2->indices.size())){
+					std::cout << "hmm3" << std::endl;
+					projectToLine(hulls.at(i), planes.at(i), inliers);
+					projectToLine(hulls.at(k), planes.at(k), inliers2);
+				}
+				inliers->indices.clear();
+				inliers2->indices.clear();
 			}
 		}
 	}

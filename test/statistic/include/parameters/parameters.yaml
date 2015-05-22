@@ -6,7 +6,7 @@ SVVoxelResolution       : 0.01,
 SVSeedResolution        : 0.02,
 SVColorImportance       : 0.1,
 SVSpatialImportance     : 5.0,
-RWHullMaxDist           : 0.1,
+RWHullMaxDist           : 0.02,
 hullAlpha               : 0.03,
 
 # Strand ransac params
@@ -16,7 +16,7 @@ normal_neigbourhood     : 0.15,
 inlier_threshold        : 0.15,
 angle_threshold         : 0.5,
 add_threshold           : 0.1,
-connectedness_res       : 0.2,
+connectedness_res       : 0.3,
 distance_threshold      : 0.0,
 
 # Reconstruction
