@@ -3,10 +3,10 @@
 # Compression class params
 VoxelLeafSize           : 0.01,
 SVVoxelResolution       : 0.01,
-SVSeedResolution        : 0.02,
+SVSeedResolution        : 0.2,
 SVColorImportance       : 0.1,
 SVSpatialImportance     : 5.0,
-RWHullMaxDist           : 0.02,
+RWHullMaxDist           : 0.2,
 hullAlpha               : 0.03,
 
 # Strand ransac params

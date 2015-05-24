@@ -109,7 +109,9 @@ public:
 	void reumannWitkamLineSimplification(vPointCloudT* hulls, vPointCloudT* s_hulls, std::vector<densityDescriptor> &dDesc);
 
 	// CORNERMATCHING
-	void cornerMatching(vPointCloudT &planes, vPointCloudT &hulls, std::vector<Eigen::Vector4d> &coeff);
+	// Takes in planes in the form of interior points, boundary points and the corresponding plane equation.
+	// Finds intersection between planes and and projects points to match those intersections.
+	void cornerMatching(vPointCloudT &planes, vPointCloudT &hulls, const std::vector<Eigen::Vector4d> &coeff);
 	void getPlaneDensity( vPointCloudT &planes, vPointCloudT &hulls, std::vector<densityDescriptor> &dDesc);
 
 	// TRIANGULATION

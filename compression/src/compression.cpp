@@ -303,55 +303,47 @@ namespace EXX{
 	}
 
 
-	void compression::cornerMatching(vPointCloudT &planes, vPointCloudT &hulls, std::vector<Eigen::Vector4d> &coeff){
+	void compression::cornerMatching(vPointCloudT &planes, vPointCloudT &hulls, const std::vector<Eigen::Vector4d> &coeff){
 		Eigen::VectorXd line;
+		std::vector<std::vector<Eigen::VectorXd> > lines(planes.size());
 		Eigen::Vector4d point;
 		point(3) = 0;
 		Eigen::Vector4d l_point;
 		l_point(3) = 0;
 		Eigen::Vector4d d_point;
 		d_point(3) = 0;
+		
 		pcl::ProjectInliers<PointT> proj;
 		proj.setModelType (pcl::SACMODEL_LINE);
 		proj.setCopyAllData(true);
-		pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
-		pcl::PointIndices::Ptr inliers2 (new pcl::PointIndices ());
+		
 		pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
 		coefficients->values.resize(6);
-		int ratioLim = 0.75;
 
-		auto eigenToCoeff = [&coefficients, &line](){
-			for (size_t i = 0; i < line.size(); ++i){
-				coefficients->values[i] = line(i);
-			}
-		};
+		// Convert pcl::PointT to Eigen::Vector4d
 		auto pointToEigen = [](Eigen::Vector4d& point, PointT& p){
 			point(0) = p.x;
 			point(1) = p.y;
 			point(2) = p.z;
 		};
-		auto positiveRatioLargerThan = [&ratioLim](int a, int b){
-			if ( a == 0 || b == 0){
-				return false;
-			} else if (a > b){
-				return a/b > ratioLim;
-			} else {
-				return b/a > ratioLim;
-			}
-		};
 
-		auto projectToLine = [&pointToEigen, &proj, &coefficients](PointCloudT::Ptr hull, PointCloudT::Ptr plane, pcl::PointIndices::Ptr inl){
-			
+		// Given bondary points, interior points, line and indexes we project points to the line and 
+		// fill in empty space between original point and projected point.
+		auto projectToLine = [&pointToEigen, &proj, &coefficients](PointCloudT::Ptr hull, PointCloudT::Ptr plane, pcl::PointIndices::Ptr inl, Eigen::VectorXd l){			
+			if (inl->indices.size()==0){ return; }
 			std::vector<Eigen::Vector4d> eigenVecs;
 			Eigen::Vector4d eigenVec;
 			eigenVec(3) = 0;
-			
+
 			// Store location of all points that will be projected.
 			for (auto i : inl->indices){
 				pointToEigen(eigenVec, hull->points.at(i));
-				std::cout << hull->points.at(i).x << " " << hull->points.at(i).y<<" " << hull->points.at(i).z << std::endl;
-				std::cout << eigenVec(0) << " "<< eigenVec(1) << " "<< eigenVec(2) << std::endl;
 				eigenVecs.push_back(eigenVec);
+			}
+
+			// change line equation from eigen to pcl::modelcoefficients.
+			for (size_t i = 0; i < l.size(); ++i){
+				coefficients->values[i] = l(i);
 			}
 
 			// Project the points.
@@ -366,13 +358,14 @@ namespace EXX{
 			Eigen::Vector4d vecDiff;
 			int numberPoints = 0;
 			double vecNorm = 0;
-			PointT newPoint;		
+			PointT newPoint;
+			// create new points. 
 			for (size_t i = 0; i < inl->indices.size(); ++i){
 				pointToEigen(projectedPoint, hull->points.at(inl->indices.at(i)));
 				vecDiff = eigenVecs[i] - projectedPoint;
 				vecNorm = vecDiff.norm();
 				if ( vecNorm > 0.02 ){ 
-					// Create points inbetween
+					// Create points inbetween if distance is greater than a threshold.
 					numberPoints = std::ceil(vecNorm/0.03);
 					for (int j=1; j<numberPoints; ++j){	
 						newPoint.x = eigenVecs[i](0)-vecDiff(0)/numberPoints*j;
@@ -385,38 +378,55 @@ namespace EXX{
 					}
 				}
 			}
-			std::vector<int> tmpindices;
-			pcl::removeNaNFromPointCloud(*hull, *hull, tmpindices);
 		};
 
+		// Find all plane to plane intersections.
 		for (size_t i = 0; i < coeff.size()-1; ++i){
 			for (size_t k = i+1; k < coeff.size(); ++k){
 				pcl::planeWithPlaneIntersection( coeff.at(i), coeff.at(k), line );
-				l_point.head(3) = line.head(3);
-				d_point.head(3) = line.tail(3);
+				lines[i].push_back(line);
+				lines[k].push_back(line);
+			}
+		}
 
-				for ( size_t j = 0; j < hulls.at(i)->points.size(); ++j ){
+		float dist;
+		float tmpDist;
+		int distIdx;
+		std::vector<pcl::PointIndices::Ptr> indices;
+		// Project hull points to closest intersection line.
+		for (size_t i = 0; i < hulls.size(); ++i){
+			// Check to see if the plane has any intersections
+			if (lines[i].size()>0){
+				indices.clear();
+				indices.resize(lines[i].size());
+				for (size_t j = 0; j < indices.size(); ++j){
+					indices[j] = pcl::PointIndices::Ptr (new pcl::PointIndices ());
+				}
+				// Go through all boundary points on a plane
+				for (size_t j = 0; j < hulls.at(i)->points.size(); ++j){
 					pointToEigen(point, hulls.at(i)->points.at(j));
-					if ( pcl::sqrPointToLineDistance(point.cast<float>(), l_point.cast<float>(), d_point.cast<float>()) < 0.20*0.20 ){
-						planes.at(i)->points.push_back( hulls.at(i)->points.at(j) );
-						inliers->indices.push_back(j);
+					// for each point calculate dist to all lines and map to closest
+					for (size_t k = 0; k < lines[i].size(); ++k){
+						l_point.head(3) = lines[i][k].head(3);
+						d_point.head(3) = lines[i][k].tail(3);
+						tmpDist = pcl::sqrPointToLineDistance(point.cast<float>(), l_point.cast<float>(), d_point.cast<float>());
+						if (k == 0){
+							dist = tmpDist;
+							distIdx = 0;
+						} else if (tmpDist < dist) {
+							dist = tmpDist;
+							distIdx = k;
+						}
+					}
+					// apply threshold on distance from intersection
+					if(dist < 0.20*0.20){
+						indices[distIdx]->indices.push_back(j);
 					}
 				}
-				for ( size_t j = 0; j < hulls.at(k)->points.size(); ++j ){
-					pointToEigen(point, hulls.at(k)->points.at(j));
-					if ( pcl::sqrPointToLineDistance(point.cast<float>(), l_point.cast<float>(), d_point.cast<float>()) < 0.20*0.20 ){
-						planes.at(k)->points.push_back( hulls.at(k)->points.at(j) );
-						inliers2->indices.push_back(j);
-					}
-				}		
-				eigenToCoeff();
-				if ( positiveRatioLargerThan(inliers->indices.size(), inliers2->indices.size())){
-					std::cout << "hmm3" << std::endl;
-					projectToLine(hulls.at(i), planes.at(i), inliers);
-					projectToLine(hulls.at(k), planes.at(k), inliers2);
+				// Project the points
+				for (size_t k = 0; k < indices.size(); ++k){
+					projectToLine(hulls.at(i), planes.at(i), indices[k], lines[i][k]);
 				}
-				inliers->indices.clear();
-				inliers2->indices.clear();
 			}
 		}
 	}
