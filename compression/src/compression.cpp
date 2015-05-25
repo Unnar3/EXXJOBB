@@ -302,7 +302,7 @@ namespace EXX{
         return cloud_out;
 	}
 
-
+	// TODO: check that both planes belonging to a line are close to the line.
 	void compression::cornerMatching(vPointCloudT &planes, vPointCloudT &hulls, const std::vector<Eigen::Vector4d> &coeff){
 		Eigen::VectorXd line;
 		std::vector<std::vector<Eigen::VectorXd> > lines(planes.size());
@@ -383,9 +383,10 @@ namespace EXX{
 		// Find all plane to plane intersections.
 		for (size_t i = 0; i < coeff.size()-1; ++i){
 			for (size_t k = i+1; k < coeff.size(); ++k){
-				pcl::planeWithPlaneIntersection( coeff.at(i), coeff.at(k), line );
-				lines[i].push_back(line);
-				lines[k].push_back(line);
+				if(pcl::planeWithPlaneIntersection( coeff.at(i), coeff.at(k), line, 0.3 )){	
+					lines[i].push_back(line);
+					lines[k].push_back(line);
+				}
 			}
 		}
 

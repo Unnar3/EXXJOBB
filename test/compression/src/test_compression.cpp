@@ -4,7 +4,6 @@
 #include <exx_compression/planes.h>
 #include <dbscan/dbscan.h>
 #include <utils/utils.h>        
-#include <plane_features/plane_features.h>
 #include <ransac_primitives/primitive_core.h>
 #include <ransac_primitives/plane_primitive.h>
 #include <pcl/filters/extract_indices.h>    

@@ -4,7 +4,6 @@
 #include <exx_compression/planes.h>
 #include <dbscan/dbscan.h>
 #include <utils/utils.h>        
-#include <plane_features/plane_features.h>
 #include <ransac_primitives/primitive_core.h>
 #include <ransac_primitives/plane_primitive.h>
 #include <pcl/filters/extract_indices.h>    
@@ -156,7 +155,7 @@ private:
     ros::Publisher point_cloud_publisher;
     EXX::compression cmprs;
     primitive_params params;
-    timeMeasurement comp, vox, rans, pp, dens, ch, sch, sv, tria, ftria, reco;
+    timeMeasurement comp, vox, rans, pp, dens, ch, sch, sv, corn, tria, ftria, reco;
     compressionMeasure cmeas;
 
 public:
@@ -196,6 +195,7 @@ public:
         sch.setName("Simplify Concave Hull");
         sv.setName("Super Voxels");
         comp.setName("Compression");
+        corn.setName("Corner Matching");
         tria.setName("Triangulation");
         ftria.setName("Fix triangulation");
         reco.setName("Reconstruction");
@@ -226,6 +226,7 @@ public:
         sch.printStat();
         sv.printStat();
         comp.printStat();
+        corn.printStat();
         tria.printStat();
         ftria.printStat();
         reco.printStat();
@@ -239,7 +240,7 @@ public:
          
         int nPoints = cloud->points.size();
 
-        ros::Time t_v1,t_v2,t_r1,t_r2,t_p1,t_p2,t_ch1,t_ch2,t_d1,t_d2,t_sh1,t_sh2,t_sv1,t_sv2;
+        ros::Time t_v1,t_v2,t_r1,t_r2,t_p1,t_p2,t_ch1,t_ch2,t_d1,t_d2,t_sh1,t_sh2,t_c1, t_c2,t_sv1,t_sv2;
         ros::Time t_t1, t_t2, t_st1, t_st2, t_re1, t_re2;
         PointCloudT::Ptr voxel_cloud (new PointCloudT ());
         t_v1 = ros::Time::now();
@@ -317,7 +318,14 @@ public:
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
         t_sv2 = ros::Time::now();
         sv.addDuration(t_sv2-t_sv1);
-        comp.addDuration(t_sv2 - t_v1);
+
+        t_c1 = ros::Time::now();
+        std::cout << "corn begin" << std::endl;
+        cmprs.cornerMatching(super_planes, simplified_hulls, normal);
+        std::cout << "corn end" << std::endl;
+        t_c2 = ros::Time::now();
+        corn.addDuration(t_c2 - t_c1);
+        comp.addDuration(t_c2 - t_v1);
 
         std::vector<float> gp3_rad;
         for (auto i : dDesc){

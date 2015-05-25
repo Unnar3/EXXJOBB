@@ -33,4 +33,4 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 
 add_executable(test_compression src/test_compression.cpp)
-target_link_libraries(test_compression ${catkin_LIBRARIES} ${QT_LIBRARIES} compression features libvtkCommon.so libvtkFiltering.so libvtkGraphics.so)
+target_link_libraries(test_compression ${catkin_LIBRARIES} ${QT_LIBRARIES} compression libvtkCommon.so libvtkFiltering.so libvtkGraphics.so)

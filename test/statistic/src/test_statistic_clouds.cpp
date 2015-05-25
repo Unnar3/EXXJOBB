@@ -5,7 +5,6 @@
 #include <exx_compression/normal.h>
 #include <dbscan/dbscan.h>
 #include <utils/utils.h>        
-#include <plane_features/plane_features.h>
 #include <ransac_primitives/primitive_core.h>
 #include <ransac_primitives/plane_primitive.h>
 #include <pcl/filters/extract_indices.h>    
@@ -158,7 +157,7 @@ private:
     ros::Publisher point_cloud_publisher;
     EXX::compression cmprs;
     primitive_params params;
-    timeMeasurement comp, vox, rans, pp, dens, ch, sch, sv, tria, ftria, reco;
+    timeMeasurement comp, vox, rans, pp, dens, ch, sch, sv, corn, tria, ftria, reco;
     compressionMeasure cmeas;
 
 public:
@@ -225,6 +224,7 @@ public:
         ch.printStat();
         sch.printStat();
         sv.printStat();
+        corn.printStat();
         comp.printStat();
         tria.printStat();
         ftria.printStat();
@@ -239,7 +239,7 @@ public:
          
         int nPoints = cloud->points.size();
 
-        ros::Time t_v1,t_v2,t_r1,t_r2,t_p1,t_p2,t_ch1,t_ch2,t_d1,t_d2,t_sh1,t_sh2,t_sv1,t_sv2;
+        ros::Time t_v1,t_v2,t_r1,t_r2,t_p1,t_p2,t_ch1,t_ch2,t_d1,t_d2,t_sh1,t_sh2, t_c1, t_c2, t_sv1,t_sv2;
         ros::Time t_t1, t_t2, t_st1, t_st2, t_re1, t_re2;
         PointCloudT::Ptr voxel_cloud (new PointCloudT ());
         t_v1 = ros::Time::now();
@@ -249,7 +249,7 @@ public:
         vox.addDuration(t_v2 - t_v1);
 
         t_r1 = ros::Time::now();
-        params.min_shape  = voxel_cloud->points.size()*0.05;
+        params.min_shape  = voxel_cloud->points.size()*0.001;
         params.inlier_min = params.min_shape;
 
         // Perform the compression        
@@ -318,7 +318,14 @@ public:
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
         t_sv2 = ros::Time::now();
         sv.addDuration(t_sv2-t_sv1);
-        comp.addDuration(t_sv2 - t_v1);
+        
+        t_c1 = ros::Time::now();
+        std::cout << "corn begin" << std::endl;
+        cmprs.cornerMatching(super_planes, simplified_hulls, normal);
+        std::cout << "corn end" << std::endl;
+        t_c2 = ros::Time::now();
+        corn.addDuration(t_c2 - t_c1);
+        comp.addDuration(t_c2 - t_v1);
 
         std::vector<float> gp3_rad;
         for (auto i : dDesc){
@@ -335,38 +342,38 @@ public:
         }
         cmeas.addNew(nPoints, i);
 
-        cmprs.cornerMatching(super_planes, simplified_hulls, normal);
-        std::cout << "spes" << std::endl;
-        PointCloudT::Ptr cloudCorner (new PointCloudT ());
-        int rcol = 50;
-        for (size_t i = 0; i < super_planes.size(); ++i){
-            // for (size_t j = 0; j < super_planes[i]->points.size(); ++j){
-            //     super_planes[i]->points[j].r = 255-rcol;
-            //     super_planes[i]->points[j].g = 150;
-            //     super_planes[i]->points[j].b = rcol;
-            // }
-            // for (auto& pt : simplified_hulls[i]->points){
-            //     pt.r = 255-rcol;
-            //     pt.g = 150;
-            //     pt.b = rcol;
-            // }
-            *cloudCorner += *super_planes[i];
-            *cloudCorner += *simplified_hulls[i];
-            rcol += 50;
-        }
-        std::cout << "size super" << super_planes.size() << std::endl;
-        pcl::io::savePCDFileASCII ("/home/unnar/Desktop/test_pcd.pcd", *cloudCorner);
+        // std::cout << "spes" << std::endl;
+        // PointCloudT::Ptr cloudCorner (new PointCloudT ());
+        // int rcol = 50;
+        // for (size_t i = 0; i < super_planes.size(); ++i){
+        //     // for (size_t j = 0; j < super_planes[i]->points.size(); ++j){
+        //     //     super_planes[i]->points[j].r = 255-rcol;
+        //     //     super_planes[i]->points[j].g = 150;
+        //     //     super_planes[i]->points[j].b = rcol;
+        //     // }
+        //     // for (auto& pt : simplified_hulls[i]->points){
+        //     //     pt.r = 255-rcol;
+        //     //     pt.g = 150;
+        //     //     pt.b = rcol;
+        //     // }
+        //     *cloudCorner += *super_planes[i];
+        //     *cloudCorner += *simplified_hulls[i];
+        //     rcol += 50;
+        // }
+        // std::cout << "size super" << super_planes.size() << std::endl;
+        // pcl::io::savePCDFileASCII ("/home/unnar/Desktop/test_pcd.pcd", *cloudCorner);
 
-        // std::vector<EXX::cloudMesh> cmesh;
-        // t_t1 = ros::Time::now();
-        // cmprs.greedyProjectionTriangulationPlanes(nonPlanar, super_planes, simplified_hulls, cmesh, gp3_rad);
-        // t_t2 = ros::Time::now();
-        // tria.addDuration(t_t2-t_t1);
-        // t_st1 = ros::Time::now();
-        // cmprs.improveTriangulation(cmesh, super_planes, simplified_hulls);
-        // t_st2 = ros::Time::now();
-        // ftria.addDuration(t_st2-t_st1);
-        // reco.addDuration(t_st2-t_t1);
+        std::vector<EXX::cloudMesh> cmesh;
+        t_t1 = ros::Time::now();
+        cmprs.greedyProjectionTriangulationPlanes(nonPlanar, super_planes, simplified_hulls, cmesh, gp3_rad);
+        t_t2 = ros::Time::now();
+        tria.addDuration(t_t2-t_t1);
+        t_st1 = ros::Time::now();
+        cmprs.improveTriangulation(cmesh, super_planes, simplified_hulls);
+        t_st2 = ros::Time::now();
+        ftria.addDuration(t_st2-t_st1);
+        reco.addDuration(t_st2-t_t1);
+        std::cout << "publish" << std::endl;
         cloudPublish( nonPlanar, super_planes, simplified_hulls, dDesc, normal);
     }
 

@@ -110,7 +110,6 @@ pcl::planeWithPlaneIntersection (const Eigen::Matrix<Scalar, 4, 1> &plane_a,
                      0,0,2, plane_a[2], plane_b[2],
                      plane_a[0], plane_a[1], plane_a[2], 0, 0,
                      plane_b[0], plane_b[1], plane_b[2], 0, 0;
-
   Vector5 b;
   b << 0, 0, 0, -plane_a[3], -plane_b[3];
 
