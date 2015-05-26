@@ -71,13 +71,13 @@ void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointC
         manual = mSceneMgr->createManualObject("manual");
     }
 
-    for ( size_t i = 0; i < hulls.size(); ++i){
-        for ( size_t j = 0; j < hulls.at(i)->points.size(); ++j){
-            hulls.at(i)->points[j].r = 255;
-            hulls.at(i)->points[j].g = 255-2*j;
-            hulls.at(i)->points[j].b = 0;
-        }
-    }
+    // for ( size_t i = 0; i < hulls.size(); ++i){
+    //     for ( size_t j = 0; j < hulls.at(i)->points.size(); ++j){
+    //         hulls.at(i)->points[j].r = 255;
+    //         hulls.at(i)->points[j].g = 255-2*j;
+    //         hulls.at(i)->points[j].b = 0;
+    //     }
+    // }
 
     std::vector<EXX::cloudMesh> cmesh;
     std::cout << "trian" << std::endl;

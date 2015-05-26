@@ -371,9 +371,9 @@ namespace EXX{
 						newPoint.x = eigenVecs[i](0)-vecDiff(0)/numberPoints*j;
 						newPoint.y = eigenVecs[i](1)-vecDiff(1)/numberPoints*j;
 						newPoint.z = eigenVecs[i](2)-vecDiff(2)/numberPoints*j;
-						newPoint.r = 0;//hull->points.at(inl->indices.at(i)).r;
-						newPoint.g = 0;//hull->points.at(inl->indices.at(i)).g;
-						newPoint.b = 255;//hull->points.at(inl->indices.at(i)).b;
+						newPoint.r = hull->points.at(inl->indices.at(i)).r;
+						newPoint.g = hull->points.at(inl->indices.at(i)).g;
+						newPoint.b = hull->points.at(inl->indices.at(i)).b;
 						plane->points.push_back(newPoint);
 					}
 				}

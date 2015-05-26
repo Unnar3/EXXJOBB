@@ -12,8 +12,8 @@ hullAlpha               : 0.03,
 # Strand ransac params
 disjoinedSet            : 10,
 octree_res              : 1.0,
-normal_neigbourhood     : 0.15,
-inlier_threshold        : 0.20,
+normal_neigbourhood     : 0.05,
+inlier_threshold        : 0.15,
 angle_threshold         : 0.5,
 add_threshold           : 0.1,
 connectedness_res       : 0.1,
@@ -23,27 +23,27 @@ distance_threshold      : 0.0,
 GP3SearchRad            : 10.0,
 GP3Mu                   : 0.35,
 GP3MaxNearestNeighbours : 15,
-GP3Ksearch              : 200,
+GP3Ksearch              : 50,
 
 # TOPICS
 TOPIC_POINT_CLOUD       : "/camera/depth_registered/points",
 HZ                      : 20,
 
 #Single cloud
-# Room : "3",
+Room : "3",
 # idx  : 12, # min
-# idx  : 39, # max
+idx  : 39, # max
 # Room : "2",
 # idx  : 29,þ # min
-# idx  : 33, # max
+# idx  : 33, # max 
 # Room : "0",
 # idx  : 8, # min
 # idx  : 20, # max
 
 
 # Adaptive compression
-Room : "3",
-idx  : 8, # Adaptive
+# Room : "3",
+# idx  : 8, # Adaptive
 
 # Better boundary forcing
 # Room : "2",

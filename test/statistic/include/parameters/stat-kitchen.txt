@@ -92,3 +92,60 @@ Compression
   average: Uncompressed: 258405 Compressed: 6810 ratio: 46.2888
 
 
+
+#####################################################################################3
+
+
+voxelGridFilter
+  min: 0.0175948 sec
+  max: 0.0266724 sec
+  average: 0.0229535 sec
+ransac
+  min: 0.14092 sec
+  max: 0.347151 sec
+  average: 0.218946 sec
+Project to Plane
+  min: 0.000442001 sec
+  max: 0.000960294 sec
+  average: 0.000659283 sec
+Density measure
+  min: 0.00806813 sec
+  max: 0.0552122 sec
+  average: 0.0262378 sec
+Concave Hull
+  min: 0.107377 sec
+  max: 0.209359 sec
+  average: 0.15525 sec
+Simplify Concave Hull
+  min: 5.9045e-05 sec
+  max: 0.00085634 sec
+  average: 0.000490936 sec
+Super Voxels
+  min: 0.077175 sec
+  max: 0.175184 sec
+  average: 0.12583 sec
+Compression
+  min: 0.378355 sec
+  max: 0.698434 sec
+  average: 0.551517 sec
+Corner Matching
+  min: 0.00023433 sec
+  max: 0.00485759 sec
+  average: 0.00114183 sec
+Triangulation
+  min: 0.023437 sec
+  max: 0.160002 sec
+  average: 0.0878495 sec
+Fix triangulation
+  min: 6.14e-07 sec
+  max: 8.041e-06 sec
+  average: 2.1109e-06 sec
+Reconstruction
+  min: 0.0234385 sec
+  max: 0.160011 sec
+  average: 0.0878529 sec
+Compression
+  min: Uncompressed: 250794 Compressed: 14132 ratio: 17.7465
+  max: Uncompressed: 270716 Compressed: 2487 ratio: 108.852
+  average: Uncompressed: 258405 Compressed: 8296 ratio: 38.5471
+  minIdx: 12 maxIdx: 39
