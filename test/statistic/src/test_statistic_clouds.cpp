@@ -313,7 +313,6 @@ public:
         cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
         t_sh2 = ros::Time::now();
         sch.addDuration(t_sh2 - t_sh1);
-        // cmprs.cornerMatching(plane_vec, simplified_hulls, normal);
         t_sv1 = ros::Time::now();
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
         t_sv2 = ros::Time::now();
@@ -321,7 +320,7 @@ public:
         
         t_c1 = ros::Time::now();
         std::cout << "corn begin" << std::endl;
-        cmprs.cornerMatching(super_planes, simplified_hulls, normal);
+        // cmprs.cornerMatching(super_planes, simplified_hulls, normal);
         std::cout << "corn end" << std::endl;
         t_c2 = ros::Time::now();
         corn.addDuration(t_c2 - t_c1);

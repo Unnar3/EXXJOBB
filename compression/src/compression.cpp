@@ -364,7 +364,7 @@ namespace EXX{
 				pointToEigen(projectedPoint, hull->points.at(inl->indices.at(i)));
 				vecDiff = eigenVecs[i] - projectedPoint;
 				vecNorm = vecDiff.norm();
-				if ( vecNorm > 0.02 ){ 
+				if ( vecNorm > 0.005 ){ 
 					// Create points inbetween if distance is greater than a threshold.
 					numberPoints = std::ceil(vecNorm/0.03);
 					for (int j=1; j<numberPoints; ++j){	

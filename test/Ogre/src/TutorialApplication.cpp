@@ -80,22 +80,10 @@ void TutorialApplication::updateScene(PointCloudT::Ptr cloud){
     // TutorialApplication::loadBaseCloud();
     // Triangulate the cloud.
     EXX::compression cmprs;
-    cmprs.setVoxelLeafSize(VoxelLeafSize_);
-    cmprs.setSVVoxelResolution(SVVoxelResolution_);
-    cmprs.setSVSeedResolution(SVSeedResolution_);
-    // cmprs.setSVColorImportance(SVColorImportance_);
-    // cmprs.setSVSpatialImportance(SVSpatialImportance_);
-    cmprs.setRANSACDistanceThreshold(RANSACDistanceThreshold_);
-    cmprs.setRANSACMinInliers(RANSACMinInliers_);
-    // cmprs.setSimplifyHulls(simplifyHulls_);
     cmprs.setGP3SearchRad(GP3SearchRad_);
     cmprs.setGP3Mu(GP3Mu_);
     cmprs.setGP3MaxNearestNeighbours(GP3MaxNearestNeighbours_);
     cmprs.setGP3Ksearch(GP3Ksearch_);
-    cmprs.setRWHullMaxDist(RWHullMaxDist_);
-    cmprs.setECClusterTolerance(ECClusterTolerance_);
-    cmprs.setECMinClusterSize(ECMinClusterSize_);
-    cmprs.setHULLAlpha(hullAlpha_);
 
     
     PointCloudT::Ptr voxel_cloud (new PointCloudT ());
@@ -234,24 +222,10 @@ void TutorialApplication::loadBaseCloud(){
 void TutorialApplication::loadParams(){
     // nh.param<std::string>("configPath", configPath_, "./");
     configPath_ = params::load<std::string>("configPath", nh);
-    nh.param<std::string>("cloudPath", cloudPath_, "./");
-    nh.param<std::string>("savePath", savePath_, "./");
-    nh.param<double>("SVVoxelResolution", SVVoxelResolution_, 0.1);
-    nh.param<double>("SVSeedResolution", SVSeedResolution_, 0.3);
-    nh.param<double>("SVColorImportance", SVColorImportance_, 1.0);
-    nh.param<double>("SVSpatialImportance", SVSpatialImportance_, 0.01);
-    nh.param<double>("RANSACDistanceThreshold", RANSACDistanceThreshold_, 0.04);
-    nh.param<int>("RANSACMinInliers", RANSACMinInliers_, 200);
-    nh.param<double>("VoxelLeafSize", VoxelLeafSize_, 0.02);
     nh.param<double>("GP3SearchRad", GP3SearchRad_, 0.3); 
     nh.param<double>("GP3Mu", GP3Mu_, 2.5);
     nh.param<double>("GP3MaxNearestNeighbours", GP3MaxNearestNeighbours_, 100);
     nh.param<double>("GP3Ksearch", GP3Ksearch_, 20);
-    nh.param<double>("RWHullMaxDist", RWHullMaxDist_, 0.3);
-    nh.param<bool>("simplifyHulls", simplifyHulls_, true);
-    nh.param<double>( "ECClusterTolerance", ECClusterTolerance_, 0.05);
-    nh.param<int>( "ECMinClusterSize", ECMinClusterSize_, 100);
-    nh.param<double>("hullAlpha", hullAlpha_, 0.1);
 }
 
 #ifdef __cplusplus

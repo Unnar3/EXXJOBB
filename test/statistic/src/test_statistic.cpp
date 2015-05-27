@@ -313,7 +313,6 @@ public:
         cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
         t_sh2 = ros::Time::now();
         sch.addDuration(t_sh2 - t_sh1);
-        // cmprs.cornerMatching(plane_vec, simplified_hulls, normal);
         t_sv1 = ros::Time::now();
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
         t_sv2 = ros::Time::now();
