@@ -1,0 +1,114 @@
+wen hallway
+
+0.02
+voxelGridFilter
+  min: 0.48193 sec
+  max: 0.48193 sec
+  average: 0.48193 sec
+ransac
+  min: 11.931 sec
+  max: 11.931 sec
+  average: 11.931 sec
+Project to Plane
+  min: 0.00740474 sec
+  max: 0.00740474 sec
+  average: 0.00740474 sec
+Density measure
+  min: 0.321335 sec
+  max: 0.321335 sec
+  average: 0.321335 sec
+Concave Hull
+  min: 1.98602 sec
+  max: 1.98602 sec
+  average: 1.98602 sec
+Simplify Concave Hull
+  min: 0.0184386 sec
+  max: 0.0184386 sec
+  average: 0.0184386 sec
+Super Voxels
+  min: 0.906549 sec
+  max: 0.906549 sec
+  average: 0.906549 sec
+
+  min: 4.2714e-05 sec
+  max: 4.2714e-05 sec
+  average: 4.2714e-05 sec
+Compression
+  min: 15.6528 sec
+  max: 15.6528 sec
+  average: 15.6528 sec
+Triangulation
+  min: 2.60484 sec
+  max: 2.60484 sec
+  average: 2.60484 sec
+Fix triangulation
+  min: 9.9047e-05 sec
+  max: 9.9047e-05 sec
+  average: 9.9047e-05 sec
+Reconstruction
+  min: 2.60494 sec
+  max: 2.60494 sec
+  average: 2.60494 sec
+Compression
+  min: Uncompressed: 4915200 Compressed: 69224 ratio: 71.0043
+  max: Uncompressed: 4915200 Compressed: 69224 ratio: 71.0043
+  average: Uncompressed: 4915200 Compressed: 69224 ratio: 71.0043
+  minIdx: 0 maxIdx: 0
+
+
+
+0.01
+
+voxelGridFilter
+  min: 0.552477 sec
+  max: 0.552477 sec
+  average: 0.552477 sec
+ransac
+  min: 78.525 sec
+  max: 78.525 sec
+  average: 78.525 sec
+Project to Plane
+  min: 0.0218103 sec
+  max: 0.0218103 sec
+  average: 0.0218103 sec
+Density measure
+  min: 0.411394 sec
+  max: 0.411394 sec
+  average: 0.411394 sec
+Concave Hull
+  min: 6.91648 sec
+  max: 6.91648 sec
+  average: 6.91648 sec
+Simplify Concave Hull
+  min: 0.0190415 sec
+  max: 0.0190415 sec
+  average: 0.0190415 sec
+Super Voxels
+  min: 3.87447 sec
+  max: 3.87447 sec
+  average: 3.87447 sec
+
+  min: 4.0672e-05 sec
+  max: 4.0672e-05 sec
+  average: 4.0672e-05 sec
+Compression
+  min: 90.3208 sec
+  max: 90.3208 sec
+  average: 90.3208 sec
+Triangulation
+  min: 7.68846 sec
+  max: 7.68846 sec
+  average: 7.68846 sec
+Fix triangulation
+  min: 1.8565e-05 sec
+  max: 1.8565e-05 sec
+  average: 1.8565e-05 sec
+Reconstruction
+  min: 7.68848 sec
+  max: 7.68848 sec
+  average: 7.68848 sec
+Compression
+  min: Uncompressed: 4915200 Compressed: 132652 ratio: 37.0533
+  max: Uncompressed: 4915200 Compressed: 132652 ratio: 37.0533
+  average: Uncompressed: 4915200 Compressed: 132652 ratio: 37.0533
+  minIdx: 0 maxIdx: 0

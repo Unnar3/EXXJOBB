@@ -215,6 +215,14 @@ public:
         cloud = sweep.vIntermediateRoomClouds[idx];
         std::vector<int> indices;
         pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
+
+        // pcl::console::print_highlight ("Loading point cloud...\n");
+        // if (pcl::io::loadPCDFile<PointT> ("/home/unnar/catkin_ws/src/Metarooms/room_2/complete_cloud.pcd", *cloud))
+        // {
+        //     pcl::console::print_error ("Error loading cloud file!\n");
+        //     return;
+        // }
+
         performCompression(cloud);
 
         vox.printStat();

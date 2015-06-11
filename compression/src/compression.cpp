@@ -366,7 +366,6 @@ namespace EXX{
 				vecNorm = vecDiff.norm();
 				if ( vecNorm > 0.005 ){ 
 					// Create points inbetween if distance is greater than a threshold.
-					numberPoints = std::ceil(vecNorm/0.03);
 					for (int j=1; j<numberPoints; ++j){	
 						newPoint.x = eigenVecs[i](0)-vecDiff(0)/numberPoints*j;
 						newPoint.y = eigenVecs[i](1)-vecDiff(1)/numberPoints*j;

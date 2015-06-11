@@ -1,9 +1,9 @@
 {
 
 # Compression class params
-VoxelLeafSize           : 0.002,
-SVVoxelResolution       : 0.002,
-SVSeedResolution        : 0.005,
+VoxelLeafSize           : 0.005,
+SVVoxelResolution       : 0.01,
+SVSeedResolution        : 0.1,
 SVColorImportance       : 0.1,
 SVSpatialImportance     : 5.0,
 RWHullMaxDist           : 0.2,
@@ -13,9 +13,9 @@ hullAlpha               : 0.03,
 disjoinedSet            : 10,
 octree_res              : 1.0,
 normal_neigbourhood     : 0.05,
-inlier_threshold        : 0.08,
-angle_threshold         : 0.25,
-add_threshold           : 0.1,
+inlier_threshold        : 0.10,
+angle_threshold         : 0.2,
+add_threshold           : 0.01,
 connectedness_res       : 0.1,
 distance_threshold      : 0.0,
 
@@ -46,10 +46,13 @@ HZ                      : 20,
 # idx  : 8, # Adaptive
 
 # Better boundary forcing
-Room : "2",
-idx  : 7,
+# Room : "2",
+# idx  : 43,
 
 # # Random test 
 # Room : "3",
 # idx  : 26,
+# 
+Room : "2",
+idx  : 43,
 }

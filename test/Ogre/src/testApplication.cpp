@@ -100,7 +100,7 @@ void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointC
 
     int pic = 0;
     Ogre::Real r, g, b;
-    for (std::vector<EXX::cloudMesh>::iterator ite = cmesh.begin(); ite < cmesh.end()-1; ++ite){
+    for (std::vector<EXX::cloudMesh>::iterator ite = cmesh.begin(); ite < cmesh.end(); ++ite){
 
         for (size_t i = 0; i < (*ite).cloud->points.size(); i++){
             manual->position((*ite).cloud->points[i].x, -(*ite).cloud->points[i].y, -(*ite).cloud->points[i].z);
