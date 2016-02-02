@@ -1,5 +1,8 @@
 {
 
+# Path to clouds
+path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_Waypoints/WayPoint9/20151221/patrol_run_9/,
+
 # Compression class params
 VoxelLeafSize           : 0.005,
 SVVoxelResolution       : 0.01,
@@ -28,31 +31,4 @@ GP3Ksearch              : 50,
 # TOPICS
 TOPIC_POINT_CLOUD       : "/camera/depth_registered/points",
 HZ                      : 20,
-
-#Single cloud
-# Room : "3",
-# idx  : 12, # min
-# idx  : 39, # max
-# Room : "2",
-# idx  : 29,þ # min
-# idx  : 33, # max
-# Room : "0",
-# idx  : 8, # min
-# idx  : 20, # max
-
-
-# Adaptive compression
-# Room : "3",
-# idx  : 8, # Adaptive
-
-# Better boundary forcing
-# Room : "2",
-# idx  : 43,
-
-# # Random test
-# Room : "3",
-# idx  : 26,
-#
-Room : "2",
-idx  : 25,
 }
