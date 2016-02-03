@@ -6,13 +6,16 @@
 #include <utils/utils.h>
 #include <ransac_primitives/primitive_core.h>
 #include <ransac_primitives/plane_primitive.h>
-#include <pcl/filters/extract_indices.h>
 #include <simple_xml_parser.h>
 #include <PointTypes/surfel_type.h>
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/conversions.h>
+// #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/kdtree/impl/kdtree_flann.hpp>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/io/pcd_io.h>
 
 // OTHER
 #include <pcl/console/parse.h>
@@ -84,10 +87,152 @@ public:
     }
 
     void testSurfel(void){
-        SurfelCloudT::Ptr surfel (new SurfelCloudT());
+        std::string path = loadParam<std::string>("path", nh);
+
+        SurfelCloudT::Ptr surfel_cloud (new SurfelCloudT());
+        PointCloudT::Ptr segment (new PointCloudT());
+        NormalCloudT::Ptr normals (new NormalCloudT());
+
+        pcl::PCDReader reader;
+        reader.read (path + "surfel_map.pcd", *surfel_cloud);
+        reader.read (path + "complete_cloud.pcd", *segment);
+
+        normals = compute_surfel_normals(surfel_cloud, segment);
+        std::cout << "hahahahah" << std::endl;
+
+
+        std::vector<PointCloudT::Ptr> plane_vec;
+        std::vector<Eigen::Vector4d> normal_vec;
+        PointCloudT::Ptr nonPlanar (new PointCloudT());
+        planeSegmentation(segment, normals, plane_vec, normal_vec, nonPlanar);
+
+        // PROJECT TO PLANE
+        // for ( size_t i = 0; i < normal_vec.size(); ++i ){
+        //     EXX::compression::projectToPlaneS( plane_vec[i], normal_vec[i] );
+        // }
+
+        // Define all remaining data structures
+        std::vector<PointCloudT::Ptr> hulls;
+        std::vector<PointCloudT::Ptr> simplified_hulls;
+        std::vector<EXX::densityDescriptor> dDesc;
+        std::vector<PointCloudT::Ptr> super_planes;
+
+        // FIND CONCAVE HULL
+        cmprs.planeToConcaveHull(&plane_vec, &hulls);
+        cmprs.getPlaneDensity( plane_vec, hulls, dDesc);
+        cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
+        // cmprs.cornerMatching(plane_vec, simplified_hulls, normal_vec);
+        cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
+        // cloudPublish( nonPlanar, super_planes, simplified_hulls, dDesc );
+
+        cloudPublish( nonPlanar, super_planes, simplified_hulls, dDesc, normal_vec );
+
+        // std::vector<EXX::cloudMesh> cmesh;
+        // std::vector<float> gp3rad;
+        // gp3rad.reserve(dDesc.size());
+        // for(auto i : dDesc){
+        //     gp3rad.push_back(i.gp3_search_rad);
+        // }
+        //
+        // cmprs.greedyProjectionTriangulationPlanes(nonPlanar, super_planes, simplified_hulls, cmesh, gp3rad);
+        //
+        // std::vector<std::vector<float> > normal_vec_float;
+        // normal_vec_float.reserve(normal_vec.size());
+        // std::vector<float> norma(3);
+        // for(auto norm : normal_vec){
+        //     norma[0] = (float)norm[0];
+        //     norma[1] = (float)norm[1];
+        //     norma[2] = (float)norm[2];
+        //     normal_vec_float.push_back(norma);
+        // }
+        //
+        // cmprs.improveTriangulation2(cmesh, super_planes, simplified_hulls, normal_vec_float);
+
+
+        int red, green, blue;
+        PointCloudT::Ptr segmented_cloud (new PointCloudT());
+        for (size_t i = 0; i < super_planes.size(); i++) {
+            generateRandomColor(137,196,244, red,green,blue);
+            for(auto &point : super_planes[i]->points){
+                point.r = red;
+                point.g = green;
+                point.b = blue;
+            }
+            *segmented_cloud += *super_planes[i];
+            for(auto &point : simplified_hulls[i]->points){
+                point.r = red+10;
+                point.g = green+10;
+                point.b = blue+10;
+            }
+            *segmented_cloud += *simplified_hulls[i];
+        }
+
+        // for(auto plane : plane_vec){
+        //     generateRandomColor(137,196,244, red,green,blue);
+        //     for(auto &point : plane->points){
+        //         point.r = red;
+        //         point.g = green;
+        //         point.b = blue;
+        //     }
+        //     *segmented_cloud += *plane;
+        // }
+        //
+        pcl::PCDWriter writer;
+        writer.write(path + "segmented_cloud.pcd", *segmented_cloud);
     }
 
 private:
+
+    void generateRandomColor(int mix_red, int mix_green, int mix_blue,
+                                     int &red, int &green, int& blue) {
+
+        red = (rand() % 255 + mix_red) / 2;
+        green = (rand() % 255 + mix_green) / 2;
+        blue = (rand() % 255 + mix_blue) / 2;
+    }
+
+
+    void planeSegmentation( const PointCloudT::Ptr cloud_in,
+                            const NormalCloudT::Ptr normals,
+                            std::vector<PointCloudT::Ptr> &plane_vec,
+                            std::vector<Eigen::Vector4d> &normal_vec,
+                            PointCloudT::Ptr nonPlanar){
+        // Perform the compression
+        // RANSAC
+        std::vector<base_primitive*> primitives = { new plane_primitive() };
+        primitive_extractor<PointT> extractor(cloud_in, normals, primitives, params, NULL);
+        std::vector<base_primitive*> extracted;
+        extractor.extract(extracted);
+
+
+        std::vector<int> ind;
+        pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
+        pcl::ExtractIndices<PointT> extract;
+        Eigen::VectorXd data;
+        for (size_t j = 0; j < extracted.size(); ++j){
+            ind = extracted[j]->supporting_inds;
+
+            if(ind.size() < 500) continue;
+
+            inliers->indices.reserve(inliers->indices.size() + ind.size());
+            inliers->indices.insert(inliers->indices.end(), ind.begin(), ind.end());
+
+            extracted.at(j)->shape_data(data);
+            normal_vec.push_back(data.segment<4>(0));
+            PointCloudT::Ptr test_cloud (new PointCloudT ());
+            for (size_t i = 0; i < ind.size(); ++i){
+                test_cloud->points.push_back(cloud_in->points[ind[i]]);
+            }
+            plane_vec.push_back(test_cloud);
+        }
+
+        extract.setInputCloud (cloud_in);
+        extract.setIndices (inliers);
+        extract.setNegative (true);
+        extract.filter (*nonPlanar);
+    }
+
+
 
     NormalCloudT::Ptr compute_surfel_normals(SurfelCloudT::Ptr& surfel_cloud, PointCloudT::Ptr& segment)
     {
@@ -124,12 +269,14 @@ private:
         // testCompression(cloud);
     }
 
-    void cloudPublish(PointCloudT::Ptr nonPlanar ,std::vector<PointCloudT::Ptr> &planes, std::vector<PointCloudT::Ptr> &hulls, std::vector<EXX::densityDescriptor> &dDesc)
+    void cloudPublish(PointCloudT::Ptr nonPlanar ,std::vector<PointCloudT::Ptr> &planes, std::vector<PointCloudT::Ptr> &hulls, std::vector<EXX::densityDescriptor> &dDesc,std::vector<Eigen::Vector4d> &normal)
     {
         exx_compression::planes pmsgs;
+        exx_compression::normal norm;
         sensor_msgs::PointCloud2 output_p;
         sensor_msgs::PointCloud2 output_h;
         sensor_msgs::PointCloud2 output;
+        Eigen::Vector4f tmpnormal;
 
         for (size_t i = 0; i < planes.size(); ++i){
             pcl::toROSMsg(*planes[i] , output_p);
@@ -137,6 +284,11 @@ private:
             pmsgs.planes.push_back(output_p);
             pmsgs.hulls.push_back(output_h);
             pmsgs.gp3_rad.push_back(dDesc[i].gp3_search_rad);
+            tmpnormal = normal[i].cast<float>();
+            norm.normal.push_back(tmpnormal[0]);
+            norm.normal.push_back(tmpnormal[1]);
+            norm.normal.push_back(tmpnormal[2]);
+            pmsgs.normal.push_back(norm);
         }
         pcl::toROSMsg(*nonPlanar , output);
         pmsgs.nonPlanar = output;

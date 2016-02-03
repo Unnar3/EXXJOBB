@@ -4,12 +4,12 @@ Filename:    BaseApplication.cpp
 -----------------------------------------------------------------------------
 
 This source file is part of the
-   ___                 __    __ _ _    _ 
+   ___                 __    __ _ _    _
   /___\__ _ _ __ ___  / / /\ \ (_) | _(_)
  //  // _` | '__/ _ \ \ \/  \/ / | |/ / |
 / \_// (_| | | |  __/  \  /\  /| |   <| |
 \___/ \__, |_|  \___|   \/  \/ |_|_|\_\_|
-      |___/                              
+      |___/
       Tutorial Framework
       http://www.ogre3d.org/tikiwiki/
 -----------------------------------------------------------------------------
@@ -85,7 +85,8 @@ void BaseApplication::createCamera(void)
     mCamera->setNearClipDistance(0.5);
 
     mCameraMan = new OgreBites::SdkCameraMan(mCamera);   // create a default camera controller
-    mCameraMan->setStyle(OgreBites::CS_ORBIT);
+    mCameraMan->setStyle(OgreBites::CS_FREELOOK);
+    mCameraMan->setTopSpeed(25);
 }
 //-------------------------------------------------------------------------------------
 void BaseApplication::createFrameListener(void)
