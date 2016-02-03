@@ -107,9 +107,9 @@ public:
         planeSegmentation(segment, normals, plane_vec, normal_vec, nonPlanar);
 
         // PROJECT TO PLANE
-        // for ( size_t i = 0; i < normal_vec.size(); ++i ){
-        //     EXX::compression::projectToPlaneS( plane_vec[i], normal_vec[i] );
-        // }
+        for ( size_t i = 0; i < normal_vec.size(); ++i ){
+            EXX::compression::projectToPlaneS( plane_vec[i], normal_vec[i] );
+        }
 
         // Define all remaining data structures
         std::vector<PointCloudT::Ptr> hulls;

@@ -5,20 +5,20 @@ path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_Waypoints/
 
 # Compression class params
 VoxelLeafSize           : 0.005,
-SVVoxelResolution       : 0.01,
-SVSeedResolution        : 0.1,
+SVVoxelResolution       : 0.02,
+SVSeedResolution        : 0.2,
 SVColorImportance       : 0.1,
 SVSpatialImportance     : 5.0,
-RWHullMaxDist           : 0.2,
-hullAlpha               : 0.03,
+RWHullMaxDist           : 0.05,
+hullAlpha               : 0.3,
 
 # Strand ransac params
 disjoinedSet            : 10,
 octree_res              : 1.0,
-normal_neigbourhood     : 0.04,
+normal_neigbourhood     : 0.03,
 inlier_threshold        : 0.05,
-angle_threshold         : 0.5,
-add_threshold           : 0.01,
+angle_threshold         : 0.25,
+add_threshold           : 0.1,
 connectedness_res       : 0.1,
 distance_threshold      : 0.0,
 

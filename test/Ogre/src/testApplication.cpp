@@ -4,12 +4,12 @@ Filename:    testApplication.cpp
 -----------------------------------------------------------------------------
 
 This source file is part of the
-   ___                 __    __ _ _    _ 
+   ___                 __    __ _ _    _
   /___\__ _ _ __ ___  / / /\ \ (_) | _(_)
  //  // _` | '__/ _ \ \ \/  \/ / | |/ / |
 / \_// (_| | | |  __/  \  /\  /| |   <| |
 \___/ \__, |_|  \___|   \/  \/ |_|_|\_\_|
-      |___/                              
+      |___/
       Tutorial Framework
       http://www.ogre3d.org/tikiwiki/
 -----------------------------------------------------------------------------
@@ -92,7 +92,7 @@ void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointC
     std::cout << " " << std::endl;
     manual->clear();
     manual->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST);
-    
+
     PointCloudT::Ptr tmp_cloud (new PointCloudT ());
     for (int i = 0; i < cmesh.size(); ++i){
         *tmp_cloud += *cmesh[i].cloud;
@@ -100,7 +100,7 @@ void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointC
 
     int pic = 0;
     Ogre::Real r, g, b;
-    for (std::vector<EXX::cloudMesh>::iterator ite = cmesh.begin(); ite < cmesh.end(); ++ite){
+    for (std::vector<EXX::cloudMesh>::iterator ite = cmesh.begin(); ite < cmesh.end()-1; ++ite){
 
         for (size_t i = 0; i < (*ite).cloud->points.size(); i++){
             manual->position((*ite).cloud->points[i].x, -(*ite).cloud->points[i].y, -(*ite).cloud->points[i].z);
@@ -123,7 +123,7 @@ void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointC
         }
         pic += (*ite).cloud->points.size();
     }
-    manual->end();  
+    manual->end();
 
     if (first){
         mSceneMgr->getRootSceneNode()->createChildSceneNode()->attachObject(manual);
@@ -155,13 +155,13 @@ void testApplication::point_cloud_callback(const exx_compression::planes& cloud_
     for ( auto i : cloud_msg.planes ){
         PointCloudT::Ptr cloud (new PointCloudT ());
         pcl::fromROSMsg (i, *cloud);
-        planes.push_back(cloud);            
+        planes.push_back(cloud);
     }
 
     for ( auto i : cloud_msg.hulls ){
         PointCloudT::Ptr cloud (new PointCloudT ());
         pcl::fromROSMsg (i, *cloud);
-        hulls.push_back(cloud);            
+        hulls.push_back(cloud);
     }
 
     for ( auto i : cloud_msg.gp3_rad ){
@@ -169,7 +169,7 @@ void testApplication::point_cloud_callback(const exx_compression::planes& cloud_
     }
 
     for ( auto i : cloud_msg.normal ){
-        normals.push_back(i.normal); 
+        normals.push_back(i.normal);
     }
     // normals = cloud_msg.normal;
 

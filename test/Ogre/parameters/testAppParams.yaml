@@ -1,10 +1,10 @@
 {
 configPath              : "/home/unnar/catkin_ws/src/EXXJOBB/test/Ogre/dist/bin/",
-GP3SearchRad            : 10.0,
+GP3SearchRad            : 0.7,
 GP3Mu                   : 2.5,
 GP3MaxNearestNeighbours : 50,
 GP3Ksearch              : 50,
-GP3MinAngle             : 0.1,
+GP3MinAngle             : 0.2,
 
 # TOPICS
 TOPIC_POINT_CLOUD       : "/EXX/compressedPlanes",
