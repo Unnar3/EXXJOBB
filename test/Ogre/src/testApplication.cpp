@@ -56,6 +56,7 @@ testApplication::testApplication(void)
     cmprs.setGP3MaxNearestNeighbours( loadParam<double>("GP3MaxNearestNeighbours", nh) );
     cmprs.setGP3Ksearch( loadParam<double>("GP3Ksearch", nh) );
     cmprs.setGP3MinAngle( loadParam<double>("GP3MinAngle", nh) );
+    cmprs.setGP3MaxAngle( loadParam<double>("GP3MaxAngle", nh) );
 
     point_cloud_subscriber   = nh.subscribe(loadParam<std::string>("TOPIC_POINT_CLOUD", nh), 1, &testApplication::point_cloud_callback, this);
 }
@@ -100,7 +101,7 @@ void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointC
 
     int pic = 0;
     Ogre::Real r, g, b;
-    for (std::vector<EXX::cloudMesh>::iterator ite = cmesh.begin(); ite < cmesh.end()-1; ++ite){
+    for (std::vector<EXX::cloudMesh>::iterator ite = cmesh.begin(); ite < cmesh.end(); ++ite){
 
         for (size_t i = 0; i < (*ite).cloud->points.size(); i++){
             manual->position((*ite).cloud->points[i].x, -(*ite).cloud->points[i].y, -(*ite).cloud->points[i].z);

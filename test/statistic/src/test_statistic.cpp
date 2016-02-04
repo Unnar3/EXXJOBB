@@ -3,15 +3,16 @@
 #include <exx_compression/compression.h>
 #include <exx_compression/planes.h>
 #include <dbscan/dbscan.h>
-#include <utils/utils.h>        
+#include <utils/utils.h>
 #include <ransac_primitives/primitive_core.h>
 #include <ransac_primitives/plane_primitive.h>
-#include <pcl/filters/extract_indices.h>    
+#include <pcl/filters/extract_indices.h>
 #include <simple_xml_parser.h>
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/conversions.h>
+#include <tf_conversions/tf_eigen.h>
 
 // OTHER
 #include <pcl/console/parse.h>
@@ -91,7 +92,7 @@ public:
         cr = cr / clouds.size();
     }
     void printStat(){
-        int pre = 0, past = 0; 
+        int pre = 0, past = 0;
         float cr = 0;
         getAverage(pre, past, cr);
         std::cout << "Compression" << std::endl;
@@ -108,18 +109,18 @@ class timeMeasurement
     ros::Duration min;
     ros::Duration max;
     std::vector<ros::Duration> durs;
-public:    
+public:
 
     void setName(std::string n){
         name = n;
-    }   
+    }
     void addDuration(ros::Duration dur){
         if ( durs.size() == 0 ){
             min = dur;
             max = dur;
         }
         else if ( dur < min ){
-            min = dur; 
+            min = dur;
         } else if ( dur > max ) {
             max = dur;
         }
@@ -147,7 +148,7 @@ public:
 };
 
 class TestCompression
-{ 
+{
 public:
     ros::NodeHandle nh;
 private:
@@ -184,7 +185,7 @@ public:
         params.add_threshold           = loadParam<double>("add_threshold", nh);
         params.connectedness_res       = loadParam<double>("connectedness_res", nh);
         params.distance_threshold      = loadParam<double>("distance_threshold", nh);
-    
+
         std::cout << "leaf size: " << cmprs.getVoxelLeafSize() << std::endl;
 
         vox.setName("voxelGridFilter");
@@ -207,7 +208,7 @@ public:
         PointCloudT::Ptr cloud (new PointCloudT ());
         std::string room = loadParam<std::string>("Room", nh);
         auto sweep = SimpleXMLParser<PointT>::loadRoomFromXML("/home/unnar/catkin_ws/src/Metarooms/room_"+room+"/room.xml");
-        
+
         for (size_t i = 0; i < sweep.vIntermediateRoomClouds.size(); i++){
         // for (size_t i = 0; i < 10; i++){
             cloud = sweep.vIntermediateRoomClouds[i];
@@ -234,10 +235,10 @@ public:
     }
 
     void performCompression(PointCloudT::Ptr cloud)
-    {    
+    {
         // Load all params for compression and Ransac
         // VOXEL GRID FILTER
-         
+
         int nPoints = cloud->points.size();
 
         ros::Time t_v1,t_v2,t_r1,t_r2,t_p1,t_p2,t_ch1,t_ch2,t_d1,t_d2,t_sh1,t_sh2,t_c1, t_c2,t_sv1,t_sv2;
@@ -252,7 +253,7 @@ public:
         params.min_shape  = voxel_cloud->points.size()*0.00005;
         params.inlier_min = params.min_shape;
 
-        // Perform the compression        
+        // Perform the compression
         // RANSAC
         std::vector<base_primitive*> primitives = { new plane_primitive() };
         primitive_extractor<PointT> extractor(voxel_cloud, primitives, params, NULL);
@@ -267,11 +268,11 @@ public:
         Eigen::VectorXd data;
         for (size_t j = 0; j < extracted.size(); ++j){
             ind = extracted[j]->supporting_inds;
-            
+
             inliers->indices.reserve(inliers->indices.size() + ind.size());
             inliers->indices.insert(inliers->indices.end(), ind.begin(), ind.end());
 
-            extracted.at(j)->shape_data(data); 
+            extracted.at(j)->shape_data(data);
             normal.push_back(data.segment<4>(0));
             PointCloudT::Ptr test_cloud (new PointCloudT ());
             for (size_t i = 0; i < ind.size(); ++i){
@@ -368,7 +369,7 @@ private:
         sensor_msgs::PointCloud2 output_p;
         sensor_msgs::PointCloud2 output_h;
         sensor_msgs::PointCloud2 output;
-        
+
         for (size_t i = 0; i < planes.size(); ++i){
             pcl::toROSMsg(*planes[i] , output_p);
             pcl::toROSMsg(*hulls[i] , output_h);
@@ -387,13 +388,13 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, NODE_NAME);
 
     TestCompression test;
-    
+
     ros::Rate loop_rate(loadParam<int>("HZ", test.nh ));
     // while(ros::ok()) {
     //     ros::spinOnce();
     //     loop_rate.sleep();
     // }
-    // 
+    //
     test.testCompression();
 
     return 0;

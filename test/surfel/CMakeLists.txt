@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   	ransac_primitives
   	metaroom_xml_parser
   	qt_build
+    tf_conversions
 )
 
 rosbuild_prepare_qt4(QtCore QtXml)

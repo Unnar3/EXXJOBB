@@ -49,7 +49,7 @@ namespace EXX{
 			out->points.push_back( it->second->centroid_ );
 		}
 		return compression::PointRGBAtoRGB(out);
-	} 
+	}
 
 	void compression::euclideanClusterPlanes(vPointCloudT* cloud, vPointCloudT* out_vec, std::vector<int> *normalIndex){
 		// Loop through all planes
@@ -92,10 +92,10 @@ namespace EXX{
 		pcl::search::KdTree<PointT>::Ptr tree (new pcl::search::KdTree<PointT> ());
 		pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
 		PointCloudT::Ptr cloud_f (new PointCloudT ());
-		
+
 		pcl::PointCloud<pcl::Normal>::Ptr cloud_normals (new pcl::PointCloud<pcl::Normal>);
 		pcl::PointCloud<pcl::Normal>::Ptr cloud_n (new pcl::PointCloud<pcl::Normal>);
-		
+
 		seg.setOptimizeCoefficients (true);
 		seg.setModelType (pcl::SACMODEL_NORMAL_PLANE);
 		seg.setMethodType (pcl::SAC_RANSAC);
@@ -121,7 +121,7 @@ namespace EXX{
 		    seg.setInputCloud (cloud);
 		    seg.setInputNormals(cloud_normals);
 		    seg.segment (*inliers, *coefficients);
-		    
+
 		    if (inliers->indices.size () == 0)
 		    {
 		        std::cout << "Could not estimate a planar model for the given dataset." << std::endl;
@@ -178,7 +178,7 @@ namespace EXX{
 		m_coeff->values[2] = float(coeff(2));
 		m_coeff->values[3] = float(coeff(3));
 		compression::projectToPlaneS(cloud, m_coeff);
-	}	
+	}
 
 	void compression::projectToPlaneS(PointCloudT::Ptr cloud, ModelCoeffT::Ptr coeff){
 
@@ -200,7 +200,7 @@ namespace EXX{
 	}
 
 	PointCloudT::Ptr compression::planeToConcaveHull_s(PointCloudT::Ptr cloud){
-		
+
 		pcl::ConcaveHull<PointT> chull;
 		PointCloudT::Ptr cloud_hull (new PointCloudT ());
 		chull.setInputCloud ( cloud );
@@ -216,7 +216,7 @@ namespace EXX{
 		vPointCloudT::iterator it = planes.begin();
 		double are = 0;
 		for ( ; it < planes.end(); ++it)
-		{	
+		{
 			PointCloudT::Ptr out (new PointCloudT ());;
 			compression::planeToConvexHull_s(*it, out, are);
 			hulls.push_back( out );
@@ -225,7 +225,7 @@ namespace EXX{
 	}
 
 	void compression::planeToConvexHull_s(const PointCloudT::Ptr cloud, PointCloudT::Ptr out, double &area ){
-		
+
 		pcl::ConvexHull<PointT> chull;
 		chull.setInputCloud ( cloud );
         //chull.setAlpha ( hull_alpha_ );
@@ -245,7 +245,7 @@ namespace EXX{
 	}
 
 	PointCloudT::Ptr compression::reumannWitkamLineSimplification_s(PointCloudT::Ptr cloud, densityDescriptor &dDesc){
-	    
+
 	    double distToLine, distBetweenPoints;
 	    int j_current, j_next, j_nextCheck, j_last;
 	    PointT current, next, last, nextCheck;
@@ -312,11 +312,11 @@ namespace EXX{
 		l_point(3) = 0;
 		Eigen::Vector4d d_point;
 		d_point(3) = 0;
-		
+
 		pcl::ProjectInliers<PointT> proj;
 		proj.setModelType (pcl::SACMODEL_LINE);
 		proj.setCopyAllData(true);
-		
+
 		pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
 		coefficients->values.resize(6);
 
@@ -327,9 +327,9 @@ namespace EXX{
 			point(2) = p.z;
 		};
 
-		// Given bondary points, interior points, line and indexes we project points to the line and 
+		// Given bondary points, interior points, line and indexes we project points to the line and
 		// fill in empty space between original point and projected point.
-		auto projectToLine = [&pointToEigen, &proj, &coefficients](PointCloudT::Ptr hull, PointCloudT::Ptr plane, pcl::PointIndices::Ptr inl, Eigen::VectorXd l){			
+		auto projectToLine = [&pointToEigen, &proj, &coefficients](PointCloudT::Ptr hull, PointCloudT::Ptr plane, pcl::PointIndices::Ptr inl, Eigen::VectorXd l){
 			if (inl->indices.size()==0){ return; }
 			std::vector<Eigen::Vector4d> eigenVecs;
 			Eigen::Vector4d eigenVec;
@@ -359,14 +359,14 @@ namespace EXX{
 			int numberPoints = 0;
 			double vecNorm = 0;
 			PointT newPoint;
-			// create new points. 
+			// create new points.
 			for (size_t i = 0; i < inl->indices.size(); ++i){
 				pointToEigen(projectedPoint, hull->points.at(inl->indices.at(i)));
 				vecDiff = eigenVecs[i] - projectedPoint;
 				vecNorm = vecDiff.norm();
-				if ( vecNorm > 0.005 ){ 
+				if ( vecNorm > 0.005 ){
 					// Create points inbetween if distance is greater than a threshold.
-					for (int j=1; j<numberPoints; ++j){	
+					for (int j=1; j<numberPoints; ++j){
 						newPoint.x = eigenVecs[i](0)-vecDiff(0)/numberPoints*j;
 						newPoint.y = eigenVecs[i](1)-vecDiff(1)/numberPoints*j;
 						newPoint.z = eigenVecs[i](2)-vecDiff(2)/numberPoints*j;
@@ -382,7 +382,7 @@ namespace EXX{
 		// Find all plane to plane intersections.
 		for (size_t i = 0; i < coeff.size()-1; ++i){
 			for (size_t k = i+1; k < coeff.size(); ++k){
-				if(pcl::planeWithPlaneIntersection( coeff.at(i), coeff.at(k), line, 0.3 )){	
+				if(pcl::planeWithPlaneIntersection( coeff.at(i), coeff.at(k), line, 0.3 )){
 					lines[i].push_back(line);
 					lines[k].push_back(line);
 				}
@@ -443,17 +443,17 @@ namespace EXX{
         PointT min_point_OBB;
         PointT max_point_OBB;
         PointT pos_OBB;
-        Eigen::Matrix3f rot_mat_OBB; 
+        Eigen::Matrix3f rot_mat_OBB;
         densityDescriptor dens;
 
-        for (size_t i = 0; i < hulls.size(); ++i){           
+        for (size_t i = 0; i < hulls.size(); ++i){
             feature_extractor.setInputCloud (hulls[i]);
             feature_extractor.compute ();
 			feature_extractor.getOBB (min_point_OBB, max_point_OBB, pos_OBB, rot_mat_OBB);
 			float x = float( std::abs( max_point_OBB.x - min_point_OBB.x) );
 			float y = float( std::abs( max_point_OBB.y - min_point_OBB.y) );
 			float area = x * y;
-			float max_points = area / ( v_leaf_size_ * v_leaf_size_ ); 
+			float max_points = area / ( v_leaf_size_ * v_leaf_size_ );
 			float pRatio = float(planes[i]->points.size()) / max_points;
 			dens.seed_res = std::min( std::max( std::min( x, y ) / 5.0f * utils::fast_sigmoid(pRatio, 3.0f), v_leaf_size_), sv_seed_res_ );
 			// dens.seed_res = sv_seed_res_;
@@ -561,8 +561,8 @@ namespace EXX{
 					}
 				}
 				if ( points.size() > 2 ){
-					max = *std::max_element(points.begin(), points.end()); 
-					min = *std::min_element(points.begin(), points.end()); 
+					max = *std::max_element(points.begin(), points.end());
+					min = *std::min_element(points.begin(), points.end());
 					if (max - min < 5){
 						polys.push_back(j);
 					}
@@ -581,7 +581,7 @@ namespace EXX{
 		int inlier_cnt = 0;
 		std::vector<uint32_t> points;
 		std::vector<int> polys;
-		std::vector<PointT> tri;
+		std::vector<PointT> tri(3);
 		std::vector<float> tmpNorm;
 		int bcount = 0;
 
@@ -592,24 +592,45 @@ namespace EXX{
 
 		for ( size_t i = 0; i < cm.size()-1; ++i ){
 			inlier_cnt = planes.at(i)->points.size();
+			std::vector<std::vector<int> > boundary_connections(hulls[i]->points.size());
+			std::vector<int> boundary_count(hulls[i]->points.size());
 			polys.clear();
 
 			for ( size_t j = 0; j < cm.at(i).mesh.polygons.size(); ++j ){
-				points.clear();
-				tri.clear();
 				bcount = 0;
 
-				// Count number of boundary points in the triangle				
-				bcount = std::count_if(cm[i].mesh.polygons[j].vertices.begin(), cm[i].mesh.polygons[j].vertices.end(),
-					[inlier_cnt](int number){return (number >= inlier_cnt);});
+				points = cm[i].mesh.polygons[j].vertices;
+				std::sort(points.begin(), points.end());
+
+
+				// Check if connected boundary triangles have been connected
+				if(points[0] >= inlier_cnt){
+					if(points[1] - points[0] == 1){}
+					// clear boundary_connections[points[0]]
+				} else if (points[1] >= inlier_cnt){
+					if(points[2] - points[1] == 1){}
+					// clear boundary_connections[points[0]]
+				} else if (points[2] >= inlier_cnt + hulls[i]->points.size()-1){
+					if(points[0] == inlier_cnt){}
+					// last and first clear last.
+				}
+
+
+
+
+				// Check if triangle is outside boundary
+				// Count number of boundary points in the triangle
+				bcount = std::count_if(points.begin(), points.end(),
+				[inlier_cnt](int number){return (number >= inlier_cnt);});
 
 				if ( bcount > 2 ){ // Three boundary points forming a triangle
 					points = cm[i].mesh.polygons[j].vertices;
 					std::sort(points.begin(), points.end());
-					for(auto k : points){
-						tri.push_back( cm.at(i).cloud->points.at(k) );
+
+                    for (size_t k = 0; k < points.size(); k++) {
+						tri[i] = cm.at(k).cloud->points.at(points[k]);
 					}
-					tmpNorm = utils::triNorm(tri.at(0), tri.at(1), tri.at(2));
+					tmpNorm = utils::triNorm(tri[0], tri[1], tri[2]);
 					if( utils::vecDot(normals[i], tmpNorm) > 0 ){
 						polys.push_back(j);
 					}
@@ -618,7 +639,7 @@ namespace EXX{
 			}
 			std::sort(polys.begin(), polys.end(), std::greater<int>());
 			for ( auto j : polys ){
-				cm[i].mesh.polygons.erase(cm[i].mesh.polygons.begin() + j);	
+				cm[i].mesh.polygons.erase(cm[i].mesh.polygons.begin() + j);
 			}
 		}
 
@@ -655,7 +676,7 @@ namespace EXX{
 
 		return std::sqrt( x*x + y*y + z*z );
 	}
-	
+
 	PointCloudT::Ptr compression::PointRGBAtoRGB( PointCloudTA::Ptr cloudRGBA ){
 		PointCloudT::Ptr cloud (new PointCloudT ());
 		pcl::copyPointCloud(*cloudRGBA, *cloud);

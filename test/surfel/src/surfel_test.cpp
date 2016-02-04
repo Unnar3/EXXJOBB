@@ -16,8 +16,11 @@
 #include <pcl/kdtree/impl/kdtree_flann.hpp>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/segmentation/extract_clusters.h>
 
 // OTHER
+#include <tf_conversions/tf_eigen.h>
 #include <pcl/console/parse.h>
 #include <Eigen/Dense>
 #include <complex>
@@ -82,6 +85,8 @@ public:
         params.add_threshold           = loadParam<double>("add_threshold", nh);
         params.connectedness_res       = loadParam<double>("connectedness_res", nh);
         params.distance_threshold      = loadParam<double>("distance_threshold", nh);
+        params.inlier_min              = loadParam<int>("inlier_min", nh);
+        params.min_shape               = loadParam<int>("min_shape", nh);
 
         std::cout << "leaf size: " << cmprs.getVoxelLeafSize() << std::endl;
     }
@@ -97,8 +102,21 @@ public:
         reader.read (path + "surfel_map.pcd", *surfel_cloud);
         reader.read (path + "complete_cloud.pcd", *segment);
 
+        auto sweep = SimpleXMLParser<PointT>::loadRoomFromXML(path + "room.xml");
+        tf::StampedTransform rotationTF = sweep.vIntermediateRoomCloudTransforms.front();
+        Eigen::Affine3d trans;
+        tf::transformTFToEigen(rotationTF, trans);
+
+        pcl::transformPointCloud (*segment, *segment, trans);
+        pcl::transformPointCloudWithNormals (*surfel_cloud, *surfel_cloud, trans);
+
+
         normals = compute_surfel_normals(surfel_cloud, segment);
-        std::cout << "hahahahah" << std::endl;
+
+
+        // std::vector<int> indices;
+        // pcl::removeNaNFromPointCloud(*normals, *normals, indices);
+        // pcl::removeNaNFromPointCloud(*segment, *segment, indices);
 
 
         std::vector<PointCloudT::Ptr> plane_vec;
@@ -121,37 +139,23 @@ public:
         cmprs.planeToConcaveHull(&plane_vec, &hulls);
         cmprs.getPlaneDensity( plane_vec, hulls, dDesc);
         cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
-        // cmprs.cornerMatching(plane_vec, simplified_hulls, normal_vec);
+        cmprs.cornerMatching(plane_vec, simplified_hulls, normal_vec);
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
         // cloudPublish( nonPlanar, super_planes, simplified_hulls, dDesc );
 
-        cloudPublish( nonPlanar, super_planes, simplified_hulls, dDesc, normal_vec );
-
-        // std::vector<EXX::cloudMesh> cmesh;
-        // std::vector<float> gp3rad;
-        // gp3rad.reserve(dDesc.size());
-        // for(auto i : dDesc){
-        //     gp3rad.push_back(i.gp3_search_rad);
-        // }
-        //
-        // cmprs.greedyProjectionTriangulationPlanes(nonPlanar, super_planes, simplified_hulls, cmesh, gp3rad);
-        //
-        // std::vector<std::vector<float> > normal_vec_float;
-        // normal_vec_float.reserve(normal_vec.size());
-        // std::vector<float> norma(3);
-        // for(auto norm : normal_vec){
-        //     norma[0] = (float)norm[0];
-        //     norma[1] = (float)norm[1];
-        //     norma[2] = (float)norm[2];
-        //     normal_vec_float.push_back(norma);
-        // }
-        //
-        // cmprs.improveTriangulation2(cmesh, super_planes, simplified_hulls, normal_vec_float);
+        for ( size_t i = 0; i < normal_vec.size(); ++i ){
+            EXX::compression::projectToPlaneS( super_planes[i], normal_vec[i] );
+            EXX::compression::projectToPlaneS( simplified_hulls[i], normal_vec[i] );
+        }
 
 
+
+
+        int k = 0;
         int red, green, blue;
         PointCloudT::Ptr segmented_cloud (new PointCloudT());
         for (size_t i = 0; i < super_planes.size(); i++) {
+            // if(super_planes[i]->points.size()<2000) continue;
             generateRandomColor(137,196,244, red,green,blue);
             for(auto &point : super_planes[i]->points){
                 point.r = red;
@@ -160,35 +164,108 @@ public:
             }
             *segmented_cloud += *super_planes[i];
             for(auto &point : simplified_hulls[i]->points){
-                point.r = red+10;
-                point.g = green+10;
-                point.b = blue+10;
+                point.r = red+20;
+                point.g = green+20;
+                point.b = blue+20;
             }
             *segmented_cloud += *simplified_hulls[i];
         }
-
-        // for(auto plane : plane_vec){
-        //     generateRandomColor(137,196,244, red,green,blue);
-        //     for(auto &point : plane->points){
-        //         point.r = red;
-        //         point.g = green;
-        //         point.b = blue;
-        //     }
-        //     *segmented_cloud += *plane;
-        // }
-        //
         pcl::PCDWriter writer;
+        writer.write(path + "segmented_cloud_planar.pcd", *segmented_cloud);
+
+        PointCloudT::Ptr allPlanes (new PointCloudT());
+        PointCloudT::Ptr nonPlanarFiltered (new PointCloudT());
+        for(auto cloud : plane_vec){
+            *allPlanes += *cloud;
+        }
+
+
+        pcl::KdTreeFLANN<PointT> kdtree;
+        kdtree.setInputCloud(allPlanes);
+
+        for(auto point : nonPlanar->points){
+
+            vector<int> indices;
+            vector<float> distances;
+            kdtree.nearestKSearchT(point, 1, indices, distances);
+            if (distances.empty()) {
+                cout << "Distances empty, wtf??" << endl;
+                continue;
+            }
+            if (distances[0] > 0.005){
+                nonPlanarFiltered->points.push_back(point);
+            }
+        }
+
+        std::vector<PointCloudT::Ptr> vNonPlanar;
+        ecClustering<PointT>(nonPlanarFiltered, 0.02, 500, 100000, vNonPlanar);
+
+        for(auto cluster : vNonPlanar){
+            generateRandomColor(137,196,244, red,green,blue);
+            for(auto &point : cluster->points){
+                point.r = red;
+                point.g = green;
+                point.b = blue;
+            }
+            *segmented_cloud += *cluster;
+        }
+
+        // pcl::PCDWriter writer;
         writer.write(path + "segmented_cloud.pcd", *segmented_cloud);
+        cloudPublish( nonPlanarFiltered, super_planes, simplified_hulls, dDesc, normal_vec );
     }
 
 private:
 
+
+    // Euclidean Cluster Extraction from PCL.
+    // Inputs:
+    //  cloud, single PointCloud that we wan't to extract clusters from.
+    //  tolerance, maximum distance between points so that they belong to same cluster.
+    //  min_size, minimum number of points in a cluster.
+    //  max_size, maximum number of points in a cluster.
+    // Output:
+    //  outvec, vector containing PointClouds where each PointCloud represents a single cluster.
+    template<typename PT>
+    void ecClustering(const typename pcl::PointCloud<PT>::Ptr cloud, const float tolerance, const float min_size, const float max_size,
+        std::vector<typename pcl::PointCloud<PT>::Ptr> &outvec){
+
+        typename pcl::search::KdTree<PT>::Ptr tree (new pcl::search::KdTree<PT>);
+        tree->setInputCloud(cloud);
+
+    	std::vector<pcl::PointIndices> cluster_indices;
+        pcl::EuclideanClusterExtraction<PT> ec;
+        ec.setClusterTolerance(tolerance); // 2cm
+        ec.setMinClusterSize(min_size);
+        ec.setMaxClusterSize(max_size);
+        ec.setSearchMethod(tree);
+        ec.setInputCloud(cloud);
+        ec.extract(cluster_indices);
+
+        for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
+        {
+            PT p;
+            typename pcl::PointCloud<PT>::Ptr tmp_cloud (new pcl::PointCloud<PT>());
+            tmp_cloud->points.reserve(it->indices.size());
+            for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit){
+                p = cloud->points[*pit];
+                tmp_cloud->points.push_back(p);
+            }
+            tmp_cloud->width = tmp_cloud->points.size ();
+            tmp_cloud->height = 1;
+            tmp_cloud->is_dense = true;
+            outvec.push_back(tmp_cloud);
+        }
+    };
+
+
+
     void generateRandomColor(int mix_red, int mix_green, int mix_blue,
                                      int &red, int &green, int& blue) {
 
-        red = (rand() % 255 + mix_red) / 2;
-        green = (rand() % 255 + mix_green) / 2;
-        blue = (rand() % 255 + mix_blue) / 2;
+        red = ((rand() % 255) + mix_red) / 2;
+        green = ((rand() % 255) + mix_green) / 2;
+        blue = ((rand() % 255) + mix_blue) / 2;
     }
 
 
