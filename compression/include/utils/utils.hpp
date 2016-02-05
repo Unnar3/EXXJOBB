@@ -46,6 +46,20 @@ namespace EXX{
 			d = vecCross( vecDiff(a,b), vecDiff(a,c) );
 			return d;
 		}
+
+
+        template<typename T>
+        std::vector<T> vectorIntersection(std::vector<T> v1, std::vector<T> v2){
+            std::vector<T> v3;
+
+            std::sort(v1.begin(), v1.end());
+            std::sort(v2.begin(), v2.end());
+
+            std::set_intersection(v1.begin(),v1.end(),v2.begin(),v2.end(),std::back_inserter(v3));
+
+            return v3;
+        }
+
 	}
 
 	namespace params{

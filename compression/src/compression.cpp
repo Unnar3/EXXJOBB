@@ -604,31 +604,41 @@ namespace EXX{
 
 
 				// Check if connected boundary triangles have been connected
-				if(points[0] >= inlier_cnt){
-					if(points[1] - points[0] == 1){}
-					// clear boundary_connections[points[0]]
-				} else if (points[1] >= inlier_cnt){
-					if(points[2] - points[1] == 1){}
-					// clear boundary_connections[points[0]]
-				} else if (points[2] >= inlier_cnt + hulls[i]->points.size()-1){
-					if(points[0] == inlier_cnt){}
-					// last and first clear last.
-				}
-
-
-
+				// if (points[0] == inlier_cnt){
+				// 	if(points[2] == inlier_cnt + hulls[i]->points.size()-1){
+				// 		boundary_count.front()++;
+				// 		boundary_count.back()++;
+				// 	}
+				// }
+				// if(points[0] >= inlier_cnt){
+				// 	if(points[1] - points[0] == 1){
+				// 		boundary_count[points[0]-inlier_cnt]++;
+				// 		boundary_count[points[1]-inlier_cnt]++;
+				// 	}
+				// 	// clear boundary_connections[points[0]]
+				// } else if (points[1] >= inlier_cnt){
+				// 	if(points[2] - points[1] == 1){
+				// 		boundary_count[points[1]-inlier_cnt]++;
+				// 		boundary_count[points[2]-inlier_cnt]++;
+				// 	}
+				// 	boundary_connections[points[1]-inlier_cnt].push_back(points[0]);
+				// 	boundary_connections[points[2]-inlier_cnt].push_back(points[0]);
+				// 	// clear boundary_connections[points[0]]
+				// } else if(points[2] >= inlier_cnt){
+				// 	boundary_count[points[2]-inlier_cnt]++;
+				// 	boundary_connections[points[2]-inlier_cnt].push_back(points[0]);
+				// 	boundary_connections[points[2]-inlier_cnt].push_back(points[1]);
+				// }
 
 				// Check if triangle is outside boundary
 				// Count number of boundary points in the triangle
 				bcount = std::count_if(points.begin(), points.end(),
 				[inlier_cnt](int number){return (number >= inlier_cnt);});
-
 				if ( bcount > 2 ){ // Three boundary points forming a triangle
 					points = cm[i].mesh.polygons[j].vertices;
-					std::sort(points.begin(), points.end());
-
+					// std::sort(points.begin(), points.end());
                     for (size_t k = 0; k < points.size(); k++) {
-						tri[i] = cm.at(k).cloud->points.at(points[k]);
+						tri[k] = cm.at(i).cloud->points.at(points[k]);
 					}
 					tmpNorm = utils::triNorm(tri[0], tri[1], tri[2]);
 					if( utils::vecDot(normals[i], tmpNorm) > 0 ){
@@ -637,10 +647,63 @@ namespace EXX{
 				}
 
 			}
+
 			std::sort(polys.begin(), polys.end(), std::greater<int>());
 			for ( auto j : polys ){
 				cm[i].mesh.polygons.erase(cm[i].mesh.polygons.begin() + j);
 			}
+
+
+			// int count = 0;
+			// pcl::Vertices vertices;
+			// vertices.vertices.resize(3);
+			// std::vector<int> intersections;
+			// for (size_t j = 0; j < boundary_count.size()-1; j++) {
+			// 	if(count > 1) break;
+			// 	if(boundary_count[j] < 2){
+			// 		cm[i].cloud->points[j + inlier_cnt].r = 255;
+			// 		cm[i].cloud->points[j + inlier_cnt].g = 255;
+			// 		cm[i].cloud->points[j + inlier_cnt].b = 0;
+			// 		count++;
+			// 	}
+
+
+				// special case if j == 0
+				// if(j == 0){
+				// 	if(boundary_count.front() < 2){
+				// 		if(boundary_count.back() < 2){
+				// 			intersections = utils::vectorIntersection(boundary_connections.front(), boundary_connections.back());
+				// 			if(intersections.size() > 0){
+				// 				vertices.vertices[0] = 0+inlier_cnt;
+				// 				vertices.vertices[1] = boundary_connections.size()-1+inlier_cnt;
+				// 				vertices.vertices[2] = intersections[0];
+				// 				std::cout << inlier_cnt << ": ";
+				// 				std::cout << vertices.vertices[0] << ", ";
+				// 				std::cout << vertices.vertices[1] << ", ";
+				// 				std::cout << vertices.vertices[2] << std::endl;
+				// 				cm[i].mesh.polygons.push_back(vertices);
+				// 			}
+				// 		}
+				// 	}
+				// }
+
+				// if(boundary_count[j] < 2){
+				// 	if(boundary_count[j+1] < 2){
+				// 		intersections = utils::vectorIntersection(boundary_connections[j], boundary_connections[j+1]);
+				// 		if(intersections.size() > 0){
+				// 			vertices.vertices[0] = j+inlier_cnt;
+				// 			vertices.vertices[1] = j+1+inlier_cnt;
+				// 			vertices.vertices[2] = intersections[0];
+				// 			cm[i].mesh.polygons.push_back(vertices);
+				// 			std::cout << inlier_cnt << ": ";
+				// 			std::cout << vertices.vertices[0] << ", ";
+				// 			std::cout << vertices.vertices[1] << ", ";
+				// 			std::cout << vertices.vertices[2] << std::endl;
+				// 		}
+				// 	}
+				// }
+			// }
+
 		}
 
 	}

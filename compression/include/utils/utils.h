@@ -26,6 +26,9 @@ namespace EXX{
 		template<typename T>
 		std::vector<float> triNorm(T a, T b, T c);
 
+        template<typename T>
+        std::vector<T> vectorIntersection(std::vector<T> a, std::vector<T> b);
+
 		template<int T>
 		std::bitset<T> shiftRight( std::bitset<T> x ){
 			return ( x << 1 | x >> (T-1) );

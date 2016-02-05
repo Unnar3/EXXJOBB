@@ -157,17 +157,17 @@ public:
         for (size_t i = 0; i < super_planes.size(); i++) {
             // if(super_planes[i]->points.size()<2000) continue;
             generateRandomColor(137,196,244, red,green,blue);
-            for(auto &point : super_planes[i]->points){
-                point.r = red;
-                point.g = green;
-                point.b = blue;
-            }
+            // for(auto &point : super_planes[i]->points){
+            //     point.r = red;
+            //     point.g = green;
+            //     point.b = blue;
+            // }
             *segmented_cloud += *super_planes[i];
-            for(auto &point : simplified_hulls[i]->points){
-                point.r = red+20;
-                point.g = green+20;
-                point.b = blue+20;
-            }
+            // for(auto &point : simplified_hulls[i]->points){
+            //     point.r = 255;//red+20;
+            //     point.g = 255;//green+20;
+            //     point.b = 255;//blue+20;
+            // }
             *segmented_cloud += *simplified_hulls[i];
         }
         pcl::PCDWriter writer;
