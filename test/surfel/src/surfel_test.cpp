@@ -2,8 +2,9 @@
 #include <pcl_ros/transforms.h>
 #include <exx_compression/compression.h>
 #include <exx_compression/planes.h>
+// #include <utils/utils.h>
 #include <dbscan/dbscan.h>
-#include <utils/utils.h>
+#include <utils/utils.cpp>
 #include <ransac_primitives/primitive_core.h>
 #include <ransac_primitives/plane_primitive.h>
 #include <simple_xml_parser.h>
@@ -18,8 +19,11 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/visualization/cloud_viewer.h>
+#include <pcl/filters/project_inliers.h>
 
 // OTHER
+#include <boost/thread/thread.hpp>
 #include <tf_conversions/tf_eigen.h>
 #include <pcl/console/parse.h>
 #include <Eigen/Dense>
@@ -47,6 +51,7 @@ using SurfelT = SurfelType;
 using SurfelCloudT = pcl::PointCloud<SurfelT>;
 
 using namespace EXX::params;
+using namespace EXX;
 
 class TestSurfel
 {
@@ -110,6 +115,54 @@ public:
         pcl::transformPointCloud (*segment, *segment, trans);
         pcl::transformPointCloudWithNormals (*surfel_cloud, *surfel_cloud, trans);
 
+        // EXX::utils::OBBcube obbcube;
+        // EXX::utils::getOBB(segment, obbcube);
+        //
+        // Eigen::Affine3f transform = Eigen::Affine3f::Identity();
+        // transform.translation() << obbcube.position[0], obbcube.position[1], obbcube.position[2];
+        // transform.rotate(obbcube.rot);
+        //
+        // pcl::transformPointCloud (*segment, *segment, transform.inverse());
+
+
+        // Eigen::Vector3f position;
+        // position[0] = 0; position[1] = 0; position[2] = 0;
+        // quat =  Eigen::Quaternionf();
+        // Eigen::Quaternionf quat (obbcube.rot);
+        // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+        // viewer->setBackgroundColor (0, 0, 0);
+        // viewer->addCoordinateSystem (1.0);
+        // viewer->initCameraParameters ();
+        // viewer->addPointCloud<pcl::PointXYZRGB> (segment, "sample cloud");
+        // viewer->addCube (obbcube.position, quat,
+        //     obbcube.x,
+        //     obbcube.y,
+        //     obbcube.z,
+        //     "OBB");
+        //
+        // while(!viewer->wasStopped())
+        // {
+        //     viewer->spinOnce (100);
+        //     boost::this_thread::sleep (boost::posix_time::microseconds (100000));
+        // }
+
+        // return;
+
+        // Eigen::Affine3f transform = Eigen::Affine3f::Identity();
+        // transform.translation() << obbcube.position[0], obbcube.position[1], obbcube.position[2];
+        // transform.rotate(obbcube.rot);
+        // Eigen::Matrix4f transform_1 = Eigen::Matrix4f::Identity();
+        // transform_1.block<3,3>(0,0) = obbcube.rot.transpose();
+
+
+        // pcl::transformPointCloud (*segment, *segment, transform.inverse());
+        // pcl::transformPointCloudWithNormals (*surfel_cloud, *surfel_cloud, transform.inverse());
+        // pcl::transformPointCloud (*segment, *segment, transform_1);
+        // pcl::transformPointCloudWithNormals (*surfel_cloud, *surfel_cloud, transform_1);
+
+        // Compute OBB
+
+
 
         normals = compute_surfel_normals(surfel_cloud, segment);
 
@@ -128,6 +181,11 @@ public:
         for ( size_t i = 0; i < normal_vec.size(); ++i ){
             EXX::compression::projectToPlaneS( plane_vec[i], normal_vec[i] );
         }
+        // for(auto normal : normal_vec)
+        // std::cout << "normal: " << normal[0] << ", " << normal[1] << ", " << normal[2]  << std::endl;
+        Eigen::Vector3d mean_norm = findMainNorm(normal_vec);
+
+        // return;
 
         // Define all remaining data structures
         std::vector<PointCloudT::Ptr> hulls;
@@ -139,7 +197,7 @@ public:
         cmprs.planeToConcaveHull(&plane_vec, &hulls);
         cmprs.getPlaneDensity( plane_vec, hulls, dDesc);
         cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
-        cmprs.cornerMatching(plane_vec, simplified_hulls, normal_vec);
+        // cmprs.cornerMatching(plane_vec, simplified_hulls, normal_vec);
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
         // cloudPublish( nonPlanar, super_planes, simplified_hulls, dDesc );
 
@@ -216,6 +274,53 @@ public:
     }
 
 private:
+
+
+    Eigen::Vector3d findMainNorm(const std::vector<Eigen::Vector4d> &normals){
+        std::vector<double> x;
+        std::vector<double> y;
+        x.reserve(normals.size());
+        y.reserve(normals.size());
+        Eigen::Vector3d tmp;
+
+        for(auto normal : normals){
+            int idx;
+            normal.head(3).maxCoeff(&idx);
+            if(idx != 2 && normal[2] < 0.1){
+                tmp = normal.head(3);
+                tmp[2] = 0;
+                tmp = tmp/tmp.norm();
+                if(std::abs(tmp[1]) > std::abs(tmp[0])){
+                    // make x axis bigger by turning 90 degrees
+                    double value = tmp[0];
+                    tmp[0] = tmp[1];
+                    tmp[1] = -value;
+                }
+                if(tmp[0] < 0){
+                    tmp[0] *= -1;
+                    tmp[1] *= -1;
+                }
+                x.push_back(tmp[0]);
+                y.push_back(tmp[1]);
+                std::cout << "x: " << x.back() << "  y: " << y.back() << std::endl;
+            }
+        }
+        // median of vector
+        auto median_func = [](std::vector<double> x)->double{
+            std::sort(x.begin(), x.end());
+            if(x.size()%2 == 0)
+                return (x[x.size()/2 - 1] + x[x.size()/2]) / 2.0;
+            // else return 0.0;
+            return x[x.size()/2];
+        };
+
+        double median1 = median_func(x);
+        std::cout << "median; " << median1 << std::endl;
+
+
+
+        return tmp;
+    }
 
 
     // Euclidean Cluster Extraction from PCL.

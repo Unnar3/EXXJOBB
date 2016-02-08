@@ -1,7 +1,10 @@
 {
 
 # Path to clouds
-path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_Waypoints/WayPoint9/20151221/patrol_run_9/room_1/,
+# path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_Waypoints/WayPoint9/20151221/patrol_run_9/room_1/,
+# path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_longterm_surfels/20140820/patrol_run_2/room_1/,
+path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_longterm_surfels/20140820/patrol_run_4/room_0/,
+# path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_longterm_surfels/20140828/patrol_run_19/room_3/,
 
 # Compression class params
 VoxelLeafSize           : 0.01, # Cannot be smaller than SVVoxelResolution
@@ -17,9 +20,9 @@ disjoinedSet            : 10,
 octree_res              : 1.0,
 normal_neigbourhood     : 0.03,
 inlier_threshold        : 0.05,
-inlier_min              : 2000,
-min_shape               : 2000,
-angle_threshold         : 0.20,
+inlier_min              : 1000,
+min_shape               : 1000,
+angle_threshold         : 0.2,
 add_threshold           : 0.1,
 connectedness_res       : 0.05,
 distance_threshold      : 0.0,
