@@ -21,12 +21,14 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/filters/project_inliers.h>
+#include <pcl/common/common.h>
 
 // OTHER
 #include <boost/thread/thread.hpp>
 #include <tf_conversions/tf_eigen.h>
 #include <pcl/console/parse.h>
 #include <Eigen/Dense>
+#include <algorithm>
 #include <complex>
 #include <vector>
 #include <stdlib.h>
@@ -115,62 +117,12 @@ public:
         pcl::transformPointCloud (*segment, *segment, trans);
         pcl::transformPointCloudWithNormals (*surfel_cloud, *surfel_cloud, trans);
 
-        // EXX::utils::OBBcube obbcube;
-        // EXX::utils::getOBB(segment, obbcube);
-        //
-        // Eigen::Affine3f transform = Eigen::Affine3f::Identity();
-        // transform.translation() << obbcube.position[0], obbcube.position[1], obbcube.position[2];
-        // transform.rotate(obbcube.rot);
-        //
-        // pcl::transformPointCloud (*segment, *segment, transform.inverse());
-
-
-        // Eigen::Vector3f position;
-        // position[0] = 0; position[1] = 0; position[2] = 0;
-        // quat =  Eigen::Quaternionf();
-        // Eigen::Quaternionf quat (obbcube.rot);
         // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
         // viewer->setBackgroundColor (0, 0, 0);
-        // viewer->addCoordinateSystem (1.0);
+        // viewer->addCoordinateSystem (10.0);
         // viewer->initCameraParameters ();
-        // viewer->addPointCloud<pcl::PointXYZRGB> (segment, "sample cloud");
-        // viewer->addCube (obbcube.position, quat,
-        //     obbcube.x,
-        //     obbcube.y,
-        //     obbcube.z,
-        //     "OBB");
-        //
-        // while(!viewer->wasStopped())
-        // {
-        //     viewer->spinOnce (100);
-        //     boost::this_thread::sleep (boost::posix_time::microseconds (100000));
-        // }
-
-        // return;
-
-        // Eigen::Affine3f transform = Eigen::Affine3f::Identity();
-        // transform.translation() << obbcube.position[0], obbcube.position[1], obbcube.position[2];
-        // transform.rotate(obbcube.rot);
-        // Eigen::Matrix4f transform_1 = Eigen::Matrix4f::Identity();
-        // transform_1.block<3,3>(0,0) = obbcube.rot.transpose();
-
-
-        // pcl::transformPointCloud (*segment, *segment, transform.inverse());
-        // pcl::transformPointCloudWithNormals (*surfel_cloud, *surfel_cloud, transform.inverse());
-        // pcl::transformPointCloud (*segment, *segment, transform_1);
-        // pcl::transformPointCloudWithNormals (*surfel_cloud, *surfel_cloud, transform_1);
-
-        // Compute OBB
-
-
 
         normals = compute_surfel_normals(surfel_cloud, segment);
-
-
-        // std::vector<int> indices;
-        // pcl::removeNaNFromPointCloud(*normals, *normals, indices);
-        // pcl::removeNaNFromPointCloud(*segment, *segment, indices);
-
 
         std::vector<PointCloudT::Ptr> plane_vec;
         std::vector<Eigen::Vector4d> normal_vec;
@@ -181,11 +133,88 @@ public:
         for ( size_t i = 0; i < normal_vec.size(); ++i ){
             EXX::compression::projectToPlaneS( plane_vec[i], normal_vec[i] );
         }
-        // for(auto normal : normal_vec)
-        // std::cout << "normal: " << normal[0] << ", " << normal[1] << ", " << normal[2]  << std::endl;
+
+        for(auto normal : normal_vec)
+        std::cout << "normal: " << normal[0] << ", " << normal[1] << ", " << normal[2]  << std::endl;
+
         Eigen::Vector3d mean_norm = findMainNorm(normal_vec);
 
+        double theta = std::atan2(mean_norm[1], mean_norm[0]);
+        Eigen::Affine3d transform = Eigen::Affine3d::Identity();
+        transform.rotate (Eigen::AngleAxisd (-theta, Eigen::Vector3d::UnitZ()));
+        // pcl::transformPointCloud (*segment, *segment, transform);
+
+        // need to rotate each plane and the associated normal vector.
+        for (size_t i = 0; i < plane_vec.size(); i++) {
+            auto printEigen_func = [](Eigen::VectorXd vec, std::string str){
+                std::cout << str << ":  ";
+                for (size_t i = 0; i < vec.size(); i++) {
+                    std::cout << vec[i];
+                    if(i != vec.size()-1) std::cout << ", ";
+                }
+                std::cout << " " << std::endl;
+            };
+            printEigen_func(normal_vec[i], "before");
+            pcl::transformPointCloud (*plane_vec[i], *plane_vec[i], transform);
+            normal_vec[i][0] = normal_vec[i][0]*std::cos(-theta) - normal_vec[i][1]*std::sin(-theta);
+            normal_vec[i][1] = normal_vec[i][0]*std::sin(-theta) + normal_vec[i][1]*std::cos(-theta);
+            printEigen_func(normal_vec[i], "rotated");
+            int idx;
+            normal_vec[i].head(3).cwiseAbs().maxCoeff(&idx);
+            if(idx == 0){
+                if(std::abs(normal_vec[i][2]) < 0.15){
+                    // This is a wall like structures
+                    if(std::abs(normal_vec[i][1]) < 0.3){
+                        // Should most likely be a wall, align it to the axis.
+                        normal_vec[i][0] = 1;
+                        normal_vec[i][1] = 0;
+                        normal_vec[i][2] = 0;
+                    }
+                }
+                // Need to fis distance from origin after aligning.
+                PointT p1, p2;
+                pcl::getMinMax3D(*plane_vec[i], p1, p2);
+                p1.x = (p1.x + p2.x)/2.0;
+                p1.y = (p1.y + p2.y)/2.0;
+                p1.z = (p1.z + p2.z)/2.0;
+                normal_vec[i][3] = -(p1.x*normal_vec[i][0] + p1.y*normal_vec[i][1] + p1.z*normal_vec[i][2]);
+
+            } else if (idx == 1){
+                if(std::abs(normal_vec[i][2]) < 0.15){
+                    // This is a wall like structures
+                    if(std::abs(normal_vec[i][0]) < 0.3){
+                        // Should most likely be a wall, align it to the axis.
+                        normal_vec[i][0] = 0;
+                        normal_vec[i][1] = 1;
+                        normal_vec[i][2] = 0;
+                    }
+                }
+                // Need to fis distance from origin after aligning.
+                PointT p1, p2;
+                pcl::getMinMax3D(*plane_vec[i], p1, p2);
+                p1.x = (p1.x + p2.x)/2.0;
+                p1.y = (p1.y + p2.y)/2.0;
+                p1.z = (p1.z + p2.z)/2.0;
+                normal_vec[i][3] = -(p1.x*normal_vec[i][0] + p1.y*normal_vec[i][1] + p1.z*normal_vec[i][2]);
+            } else {
+                if(std::abs(normal_vec[i][2]) > 0.95){
+                    // floor like object
+                    normal_vec[i][0] = 0;
+                    normal_vec[i][1] = 0;
+                    normal_vec[i][2] = 1;
+
+                    if(std::abs(normal_vec[i][3]) < 0.2){
+                        normal_vec[i][3] = 0;
+                    }
+                }
+            }
+            printEigen_func(normal_vec[i], "aligned");
+        }
         // return;
+        // PROJECT TO PLANE
+        for ( size_t i = 0; i < normal_vec.size(); ++i ){
+            EXX::compression::projectToPlaneS( plane_vec[i], normal_vec[i] );
+        }
 
         // Define all remaining data structures
         std::vector<PointCloudT::Ptr> hulls;
@@ -201,10 +230,10 @@ public:
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
         // cloudPublish( nonPlanar, super_planes, simplified_hulls, dDesc );
 
-        for ( size_t i = 0; i < normal_vec.size(); ++i ){
-            EXX::compression::projectToPlaneS( super_planes[i], normal_vec[i] );
-            EXX::compression::projectToPlaneS( simplified_hulls[i], normal_vec[i] );
-        }
+        // for ( size_t i = 0; i < normal_vec.size(); ++i ){
+        //     EXX::compression::projectToPlaneS( super_planes[i], normal_vec[i] );
+        //     EXX::compression::projectToPlaneS( simplified_hulls[i], normal_vec[i] );
+        // }
 
 
 
@@ -212,15 +241,15 @@ public:
         int k = 0;
         int red, green, blue;
         PointCloudT::Ptr segmented_cloud (new PointCloudT());
-        for (size_t i = 0; i < super_planes.size(); i++) {
-            // if(super_planes[i]->points.size()<2000) continue;
+        for (size_t i = 0; i < plane_vec.size(); i++) {
+            // if(plane_vec[i]->points.size()<2000) continue;
             generateRandomColor(137,196,244, red,green,blue);
-            // for(auto &point : super_planes[i]->points){
+            // for(auto &point : plane_vec[i]->points){
             //     point.r = red;
             //     point.g = green;
             //     point.b = blue;
             // }
-            *segmented_cloud += *super_planes[i];
+            *segmented_cloud += *plane_vec[i];
             // for(auto &point : simplified_hulls[i]->points){
             //     point.r = 255;//red+20;
             //     point.g = 255;//green+20;
@@ -268,6 +297,13 @@ public:
             *segmented_cloud += *cluster;
         }
 
+        for (auto normal : normal_vec) {
+            for (size_t k = 0; k < normal.size(); k++) {
+                std::cout << normal[k] <<  ", ";
+            }
+            std::cout << " " << std::endl;
+        }
+
         // pcl::PCDWriter writer;
         writer.write(path + "segmented_cloud.pcd", *segmented_cloud);
         cloudPublish( nonPlanarFiltered, super_planes, simplified_hulls, dDesc, normal_vec );
@@ -285,11 +321,15 @@ private:
 
         for(auto normal : normals){
             int idx;
-            normal.head(3).maxCoeff(&idx);
+            normal.head(3).cwiseAbs().maxCoeff(&idx);
             if(idx != 2 && normal[2] < 0.1){
                 tmp = normal.head(3);
                 tmp[2] = 0;
                 tmp = tmp/tmp.norm();
+                // for (size_t i = 0; i < tmp.size(); i++) {
+                //     std::cout << tmp[i] << std::endl;
+                // }
+                // return tmp;
                 if(std::abs(tmp[1]) > std::abs(tmp[0])){
                     // make x axis bigger by turning 90 degrees
                     double value = tmp[0];
@@ -310,15 +350,35 @@ private:
             std::sort(x.begin(), x.end());
             if(x.size()%2 == 0)
                 return (x[x.size()/2 - 1] + x[x.size()/2]) / 2.0;
-            // else return 0.0;
             return x[x.size()/2];
         };
 
-        double median1 = median_func(x);
-        std::cout << "median; " << median1 << std::endl;
+        double median = median_func(x);
+        std::vector<double> x_median(x.size());
+        std::transform(x.begin(),x.end(),x_median.begin(),
+            [median](double x_val){
+                return std::abs(x_val - median);
+            }
+        );
+        double mad = median_func(x_median);
+        std::cout << "MAD: " << mad << std::endl;
 
-
-
+        int k = 0;
+        double sum = 0;
+        for(auto val : x){
+            if(std::abs(val - median) < 2*mad){
+                k++;
+                sum += val;
+            }
+        }
+        double mean = sum / k;
+        std::cout << "mean: " << mean << std::endl;
+        tmp[0] = mean;
+        tmp[1] = std::sqrt(1-std::pow(mean,2));
+        tmp[3] = 0;
+        for (size_t i = 0; i < tmp.size(); i++) {
+            std::cout << tmp[i] << std::endl;
+        }
         return tmp;
     }
 
