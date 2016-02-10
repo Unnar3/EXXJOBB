@@ -116,17 +116,6 @@ public:
 
         pcl::transformPointCloud (*segment, *segment, trans);
         pcl::transformPointCloudWithNormals (*surfel_cloud, *surfel_cloud, trans);
-
-        // Stupid solution to align floor to z=0;
-        // PointT p1, p2;
-        // pcl::getMinMax3D(*segment, p1, p2);
-        // Eigen::Affine3d trans_align_floor = Eigen::Affine3d::Identity();
-        // trans_align_floor.translation() << 0.0,0.0,-p1.z;
-        //
-        // pcl::transformPointCloud (*segment, *segment, trans_align_floor);
-        // pcl::transformPointCloudWithNormals (*surfel_cloud, *surfel_cloud, trans_align_floor);
-
-
         normals = compute_surfel_normals(surfel_cloud, segment);
 
         std::vector<PointCloudT::Ptr> plane_vec;
@@ -135,6 +124,8 @@ public:
         planeSegmentation(segment, normals, plane_vec, normal_vec, nonPlanar);
         Eigen::Vector3d mean_norm = cmprs.findMainNorm(normal_vec);
         rotateProcessedCloud(mean_norm, plane_vec, normal_vec, nonPlanar);
+        mergePlanes(plane_vec, normal_vec);
+
         // PROJECT TO PLANE
         for ( size_t i = 0; i < normal_vec.size(); ++i ){
             EXX::compression::projectToPlaneS( plane_vec[i], normal_vec[i] );
@@ -146,26 +137,18 @@ public:
         std::vector<EXX::densityDescriptor> dDesc;
         std::vector<PointCloudT::Ptr> super_planes;
 
-        // FIND CONCAVE HULL
+        // FIND CONCAVE HULL/* message */
         cmprs.planeToConcaveHull(&plane_vec, &hulls);
         cmprs.getPlaneDensity( plane_vec, hulls, dDesc);
         cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
         // cmprs.cornerMatching(plane_vec, simplified_hulls, normal_vec);
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
 
-        // rotateProcessedCloud(mean_norm, simplified_hulls, super_planes, normal_vec, nonPlanar);
-        // // PROJECT TO PLANE
-        // for ( size_t i = 0; i < normal_vec.size(); ++i ){
-        //     EXX::compression::projectToPlaneS( super_planes[i], normal_vec[i] );
-        //     EXX::compression::projectToPlaneS( simplified_hulls[i], normal_vec[i] );
-        // }
-
 
         int k = 0;
         int red, green, blue;
         PointCloudT::Ptr segmented_cloud (new PointCloudT());
         for (size_t i = 0; i < super_planes.size(); i++) {
-            // if(super_planes[i]->points.size()<2000) continue;
             generateRandomColor(137,196,244, red,green,blue);
             for(auto &point : super_planes[i]->points){
                 point.r = red;
@@ -238,6 +221,81 @@ private:
                         std::vector<Eigen::Vector4d>    &normal_vec){
 
         // First tab comment.
+        struct planeInfo{
+            PointT min;
+            PointT max;
+        };
+
+        auto idx_func = [](Eigen::Vector4d vec){
+            if(vec[0] == 1) return 0;
+            else if (vec[1] == 1) return 1;
+            else if (vec[2] == 1) return 2;
+            else return 3;
+        };
+
+        auto intersect_func = [](planeInfo p1, planeInfo p2, int idx){
+            if(idx == 0){
+                if(p1.min.y <= p2.max.y && p2.min.y <= p1.max.y){
+                    if(p1.min.z <= p2.max.z && p2.min.z <= p1.max.z){
+                        return true;
+                    }
+                }
+            }
+            else if(idx == 1){
+                if(p1.min.x <= p2.max.x && p2.min.x <= p1.max.x){
+                    if(p1.min.z <= p2.max.z && p2.min.z <= p1.max.z){
+                        return true;
+                    }
+                }
+            }
+            else{
+                if(p1.min.x <= p2.max.x && p2.min.x <= p1.max.y){
+                    if(p1.min.y <= p2.max.y && p2.min.y <= p1.max.y){
+                        return true;
+                    }
+                }
+            }
+            return false;
+        };
+
+        std::vector<bool> isMerged( planes.size(), false );
+        std::vector<planeInfo> infov( planes.size() );
+        planeInfo info;
+        for (size_t i = 0; i < normal_vec.size(); i++) {
+            pcl::getMinMax3D(*planes[i], info.min, info.max);
+            infov[i] = info;
+        }
+        for (size_t i = 0; i < normal_vec.size(); i++) {
+            if(isMerged[i]) continue;
+            int idx = idx_func(normal_vec[i]);
+            if( idx == 3 ) continue;
+            for (size_t j = i+1; j < normal_vec.size(); j++) {
+                if(isMerged[j]) continue;
+                if( idx_func(normal_vec[j]) == idx ){
+                    // normals facing the same way
+                    if( std::abs( normal_vec[j][3] - normal_vec[i][3] ) < 0.2 ){
+                        // Planes with very similar distance to origin
+                        // check to see if points intersect
+                        if(intersect_func(infov[i],infov[j],idx)){
+                            isMerged[j] = true;
+                            *planes[i] += *planes[j];
+                        }
+                    }
+                }
+            }
+        }
+        for (auto i = normal_vec.size(); i-- > 0;) {
+            if(isMerged[i]){
+                planes.erase(planes.begin() + i);
+                normal_vec.erase(normal_vec.begin() + i);
+            }
+        }
+        for (auto i = normal_vec.size(); i-- > 0; ) {
+            if(isMerged[i]){
+                planes.erase(planes.begin() + i);
+                normal_vec.erase(normal_vec.begin() + i);
+            }
+        }
     }
 
 
@@ -254,7 +312,7 @@ private:
         // Get angle between [1 0 0] and normal.
         double theta = std::atan2(normal[1], normal[0]);
         Eigen::Affine3d transform = Eigen::Affine3d::Identity();
-        transform.rotate (Eigen::AngleAxisd (-theta, Eigen::Vector3d::UnitZ()));
+        transform.rotate (Eigen::AngleAxisd (theta, Eigen::Vector3d::UnitZ()));
         pcl::transformPointCloud (*nonPlanar, *nonPlanar, transform);
 
         // need to rotate each plane and the associated normal vector.
@@ -269,7 +327,7 @@ private:
             int idx;
             normal_vec[i].head(3).cwiseAbs().maxCoeff(&idx);
             if(idx == 0){
-                if(std::abs(normal_vec[i][2]) < 0.15){
+                if(std::abs(normal_vec[i][2]) < 0.25){
                     // This is a wall like structures
                     if(std::abs(normal_vec[i][1]) < 0.3){
                         // Should most likely be a wall, align it to the axis.
@@ -287,7 +345,7 @@ private:
                 normal_vec[i][3] = -(p1.x*normal_vec[i][0] + p1.y*normal_vec[i][1] + p1.z*normal_vec[i][2]);
 
             } else if (idx == 1){
-                if(std::abs(normal_vec[i][2]) < 0.15){
+                if(std::abs(normal_vec[i][2]) < 0.25){
                     // This is a wall like structures
                     if(std::abs(normal_vec[i][0]) < 0.3){
                         // Should most likely be a wall, align it to the axis.

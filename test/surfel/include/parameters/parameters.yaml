@@ -2,8 +2,8 @@
 
 # Path to clouds
 # path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_Waypoints/WayPoint9/20151221/patrol_run_9/room_1/,
-path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_longterm_surfels/20140820/patrol_run_2/room_1/,
-# path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_longterm_surfels/20140820/patrol_run_4/room_0/,
+# path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_longterm_surfels/20140820/patrol_run_2/room_1/,
+path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_longterm_surfels/20140820/patrol_run_4/room_0/,
 # path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_longterm_surfels/20140828/patrol_run_19/room_3/,
 
 # Kitchen
