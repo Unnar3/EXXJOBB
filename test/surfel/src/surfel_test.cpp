@@ -117,10 +117,15 @@ public:
         pcl::transformPointCloud (*segment, *segment, trans);
         pcl::transformPointCloudWithNormals (*surfel_cloud, *surfel_cloud, trans);
 
-        // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-        // viewer->setBackgroundColor (0, 0, 0);
-        // viewer->addCoordinateSystem (10.0);
-        // viewer->initCameraParameters ();
+        // Stupid solution to align floor to z=0;
+        // PointT p1, p2;
+        // pcl::getMinMax3D(*segment, p1, p2);
+        // Eigen::Affine3d trans_align_floor = Eigen::Affine3d::Identity();
+        // trans_align_floor.translation() << 0.0,0.0,-p1.z;
+        //
+        // pcl::transformPointCloud (*segment, *segment, trans_align_floor);
+        // pcl::transformPointCloudWithNormals (*surfel_cloud, *surfel_cloud, trans_align_floor);
+
 
         normals = compute_surfel_normals(surfel_cloud, segment);
 
@@ -128,89 +133,8 @@ public:
         std::vector<Eigen::Vector4d> normal_vec;
         PointCloudT::Ptr nonPlanar (new PointCloudT());
         planeSegmentation(segment, normals, plane_vec, normal_vec, nonPlanar);
-
-        // PROJECT TO PLANE
-        for ( size_t i = 0; i < normal_vec.size(); ++i ){
-            EXX::compression::projectToPlaneS( plane_vec[i], normal_vec[i] );
-        }
-
-        for(auto normal : normal_vec)
-        std::cout << "normal: " << normal[0] << ", " << normal[1] << ", " << normal[2]  << std::endl;
-
-        Eigen::Vector3d mean_norm = findMainNorm(normal_vec);
-
-        double theta = std::atan2(mean_norm[1], mean_norm[0]);
-        Eigen::Affine3d transform = Eigen::Affine3d::Identity();
-        transform.rotate (Eigen::AngleAxisd (-theta, Eigen::Vector3d::UnitZ()));
-        // pcl::transformPointCloud (*segment, *segment, transform);
-
-        // need to rotate each plane and the associated normal vector.
-        for (size_t i = 0; i < plane_vec.size(); i++) {
-            auto printEigen_func = [](Eigen::VectorXd vec, std::string str){
-                std::cout << str << ":  ";
-                for (size_t i = 0; i < vec.size(); i++) {
-                    std::cout << vec[i];
-                    if(i != vec.size()-1) std::cout << ", ";
-                }
-                std::cout << " " << std::endl;
-            };
-            printEigen_func(normal_vec[i], "before");
-            pcl::transformPointCloud (*plane_vec[i], *plane_vec[i], transform);
-            normal_vec[i][0] = normal_vec[i][0]*std::cos(-theta) - normal_vec[i][1]*std::sin(-theta);
-            normal_vec[i][1] = normal_vec[i][0]*std::sin(-theta) + normal_vec[i][1]*std::cos(-theta);
-            printEigen_func(normal_vec[i], "rotated");
-            int idx;
-            normal_vec[i].head(3).cwiseAbs().maxCoeff(&idx);
-            if(idx == 0){
-                if(std::abs(normal_vec[i][2]) < 0.15){
-                    // This is a wall like structures
-                    if(std::abs(normal_vec[i][1]) < 0.3){
-                        // Should most likely be a wall, align it to the axis.
-                        normal_vec[i][0] = 1;
-                        normal_vec[i][1] = 0;
-                        normal_vec[i][2] = 0;
-                    }
-                }
-                // Need to fis distance from origin after aligning.
-                PointT p1, p2;
-                pcl::getMinMax3D(*plane_vec[i], p1, p2);
-                p1.x = (p1.x + p2.x)/2.0;
-                p1.y = (p1.y + p2.y)/2.0;
-                p1.z = (p1.z + p2.z)/2.0;
-                normal_vec[i][3] = -(p1.x*normal_vec[i][0] + p1.y*normal_vec[i][1] + p1.z*normal_vec[i][2]);
-
-            } else if (idx == 1){
-                if(std::abs(normal_vec[i][2]) < 0.15){
-                    // This is a wall like structures
-                    if(std::abs(normal_vec[i][0]) < 0.3){
-                        // Should most likely be a wall, align it to the axis.
-                        normal_vec[i][0] = 0;
-                        normal_vec[i][1] = 1;
-                        normal_vec[i][2] = 0;
-                    }
-                }
-                // Need to fis distance from origin after aligning.
-                PointT p1, p2;
-                pcl::getMinMax3D(*plane_vec[i], p1, p2);
-                p1.x = (p1.x + p2.x)/2.0;
-                p1.y = (p1.y + p2.y)/2.0;
-                p1.z = (p1.z + p2.z)/2.0;
-                normal_vec[i][3] = -(p1.x*normal_vec[i][0] + p1.y*normal_vec[i][1] + p1.z*normal_vec[i][2]);
-            } else {
-                if(std::abs(normal_vec[i][2]) > 0.95){
-                    // floor like object
-                    normal_vec[i][0] = 0;
-                    normal_vec[i][1] = 0;
-                    normal_vec[i][2] = 1;
-
-                    if(std::abs(normal_vec[i][3]) < 0.2){
-                        normal_vec[i][3] = 0;
-                    }
-                }
-            }
-            printEigen_func(normal_vec[i], "aligned");
-        }
-        // return;
+        Eigen::Vector3d mean_norm = cmprs.findMainNorm(normal_vec);
+        rotateProcessedCloud(mean_norm, plane_vec, normal_vec, nonPlanar);
         // PROJECT TO PLANE
         for ( size_t i = 0; i < normal_vec.size(); ++i ){
             EXX::compression::projectToPlaneS( plane_vec[i], normal_vec[i] );
@@ -228,44 +152,43 @@ public:
         cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
         // cmprs.cornerMatching(plane_vec, simplified_hulls, normal_vec);
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
-        // cloudPublish( nonPlanar, super_planes, simplified_hulls, dDesc );
 
+        // rotateProcessedCloud(mean_norm, simplified_hulls, super_planes, normal_vec, nonPlanar);
+        // // PROJECT TO PLANE
         // for ( size_t i = 0; i < normal_vec.size(); ++i ){
         //     EXX::compression::projectToPlaneS( super_planes[i], normal_vec[i] );
         //     EXX::compression::projectToPlaneS( simplified_hulls[i], normal_vec[i] );
         // }
 
 
-
-
         int k = 0;
         int red, green, blue;
         PointCloudT::Ptr segmented_cloud (new PointCloudT());
-        for (size_t i = 0; i < plane_vec.size(); i++) {
-            // if(plane_vec[i]->points.size()<2000) continue;
+        for (size_t i = 0; i < super_planes.size(); i++) {
+            // if(super_planes[i]->points.size()<2000) continue;
             generateRandomColor(137,196,244, red,green,blue);
-            // for(auto &point : plane_vec[i]->points){
-            //     point.r = red;
-            //     point.g = green;
-            //     point.b = blue;
-            // }
-            *segmented_cloud += *plane_vec[i];
-            // for(auto &point : simplified_hulls[i]->points){
-            //     point.r = 255;//red+20;
-            //     point.g = 255;//green+20;
-            //     point.b = 255;//blue+20;
-            // }
+            for(auto &point : super_planes[i]->points){
+                point.r = red;
+                point.g = green;
+                point.b = blue;
+            }
+            *segmented_cloud += *super_planes[i];
+            for(auto &point : simplified_hulls[i]->points){
+                point.r = red;
+                point.g = green;
+                point.b = blue;
+            }
             *segmented_cloud += *simplified_hulls[i];
         }
         pcl::PCDWriter writer;
         writer.write(path + "segmented_cloud_planar.pcd", *segmented_cloud);
+
 
         PointCloudT::Ptr allPlanes (new PointCloudT());
         PointCloudT::Ptr nonPlanarFiltered (new PointCloudT());
         for(auto cloud : plane_vec){
             *allPlanes += *cloud;
         }
-
 
         pcl::KdTreeFLANN<PointT> kdtree;
         kdtree.setInputCloud(allPlanes);
@@ -279,7 +202,7 @@ public:
                 cout << "Distances empty, wtf??" << endl;
                 continue;
             }
-            if (distances[0] > 0.005){
+            if (distances[0] > 0.05){
                 nonPlanarFiltered->points.push_back(point);
             }
         }
@@ -310,76 +233,175 @@ public:
     }
 
 private:
+    // we assume that the planes have been aligned to the xyz axis.
+    void mergePlanes(   std::vector<PointCloudT::Ptr>   &planes,
+                        std::vector<Eigen::Vector4d>    &normal_vec){
+
+        // First tab comment.
+    }
 
 
-    Eigen::Vector3d findMainNorm(const std::vector<Eigen::Vector4d> &normals){
-        std::vector<double> x;
-        std::vector<double> y;
-        x.reserve(normals.size());
-        y.reserve(normals.size());
-        Eigen::Vector3d tmp;
+    void rotateProcessedCloud(  const Eigen::Vector3d           normal,
+                                std::vector<PointCloudT::Ptr>   &planes,
+                                std::vector<Eigen::Vector4d>    &normal_vec,
+                                PointCloudT::Ptr                nonPlanar) {
 
-        for(auto normal : normals){
+        if(planes.size() != normal_vec.size()){
+            std::cerr << "planes and normals of different size, exiting!!!" << std::endl;
+            exit(0);
+        }
+
+        // Get angle between [1 0 0] and normal.
+        double theta = std::atan2(normal[1], normal[0]);
+        Eigen::Affine3d transform = Eigen::Affine3d::Identity();
+        transform.rotate (Eigen::AngleAxisd (-theta, Eigen::Vector3d::UnitZ()));
+        pcl::transformPointCloud (*nonPlanar, *nonPlanar, transform);
+
+        // need to rotate each plane and the associated normal vector.
+        for (size_t i = 0; i < planes.size(); i++) {
+            // Transform boundaries and super voxels according to theta.
+            pcl::transformPointCloud (*planes[i], *planes[i], transform);
+
+            // Change the direction of the normal and find new distance from origin for the plane equation.
+            // Also perfectly align to x/y/z axis if similar enough.
+            normal_vec[i][0] = normal_vec[i][0]*std::cos(-theta) - normal_vec[i][1]*std::sin(-theta);
+            normal_vec[i][1] = normal_vec[i][0]*std::sin(-theta) + normal_vec[i][1]*std::cos(-theta);
             int idx;
-            normal.head(3).cwiseAbs().maxCoeff(&idx);
-            if(idx != 2 && normal[2] < 0.1){
-                tmp = normal.head(3);
-                tmp[2] = 0;
-                tmp = tmp/tmp.norm();
-                // for (size_t i = 0; i < tmp.size(); i++) {
-                //     std::cout << tmp[i] << std::endl;
-                // }
-                // return tmp;
-                if(std::abs(tmp[1]) > std::abs(tmp[0])){
-                    // make x axis bigger by turning 90 degrees
-                    double value = tmp[0];
-                    tmp[0] = tmp[1];
-                    tmp[1] = -value;
+            normal_vec[i].head(3).cwiseAbs().maxCoeff(&idx);
+            if(idx == 0){
+                if(std::abs(normal_vec[i][2]) < 0.15){
+                    // This is a wall like structures
+                    if(std::abs(normal_vec[i][1]) < 0.3){
+                        // Should most likely be a wall, align it to the axis.
+                        normal_vec[i][0] = 1;
+                        normal_vec[i][1] = 0;
+                        normal_vec[i][2] = 0;
+                    }
                 }
-                if(tmp[0] < 0){
-                    tmp[0] *= -1;
-                    tmp[1] *= -1;
+                // Need to fix distance from origin after aligning.
+                PointT p1, p2;
+                pcl::getMinMax3D(*planes[i], p1, p2);
+                p1.x = (p1.x + p2.x)/2.0;
+                p1.y = (p1.y + p2.y)/2.0;
+                p1.z = (p1.z + p2.z)/2.0;
+                normal_vec[i][3] = -(p1.x*normal_vec[i][0] + p1.y*normal_vec[i][1] + p1.z*normal_vec[i][2]);
+
+            } else if (idx == 1){
+                if(std::abs(normal_vec[i][2]) < 0.15){
+                    // This is a wall like structures
+                    if(std::abs(normal_vec[i][0]) < 0.3){
+                        // Should most likely be a wall, align it to the axis.
+                        normal_vec[i][0] = 0;
+                        normal_vec[i][1] = 1;
+                        normal_vec[i][2] = 0;
+                    }
                 }
-                x.push_back(tmp[0]);
-                y.push_back(tmp[1]);
-                std::cout << "x: " << x.back() << "  y: " << y.back() << std::endl;
-            }
-        }
-        // median of vector
-        auto median_func = [](std::vector<double> x)->double{
-            std::sort(x.begin(), x.end());
-            if(x.size()%2 == 0)
-                return (x[x.size()/2 - 1] + x[x.size()/2]) / 2.0;
-            return x[x.size()/2];
-        };
+                // Need to fix distance from origin after aligning.
+                PointT p1, p2;
+                pcl::getMinMax3D(*planes[i], p1, p2);
+                p1.x = (p1.x + p2.x)/2.0;
+                p1.y = (p1.y + p2.y)/2.0;
+                p1.z = (p1.z + p2.z)/2.0;
+                normal_vec[i][3] = -(p1.x*normal_vec[i][0] + p1.y*normal_vec[i][1] + p1.z*normal_vec[i][2]);
+            } else {
+                if(std::abs(normal_vec[i][2]) > 0.90){
+                    // floor like object
+                    normal_vec[i][0] = 0;
+                    normal_vec[i][1] = 0;
+                    normal_vec[i][2] = 1;
 
-        double median = median_func(x);
-        std::vector<double> x_median(x.size());
-        std::transform(x.begin(),x.end(),x_median.begin(),
-            [median](double x_val){
-                return std::abs(x_val - median);
+                    PointT p1, p2;
+                    pcl::getMinMax3D(*planes[i], p1, p2);
+                    p1.x = (p1.x + p2.x)/2.0;
+                    p1.y = (p1.y + p2.y)/2.0;
+                    p1.z = (p1.z + p2.z)/2.0;
+                    normal_vec[i][3] = -(p1.x*normal_vec[i][0] + p1.y*normal_vec[i][1] + p1.z*normal_vec[i][2]);
+                }
             }
-        );
-        double mad = median_func(x_median);
-        std::cout << "MAD: " << mad << std::endl;
+        }
+    }
 
-        int k = 0;
-        double sum = 0;
-        for(auto val : x){
-            if(std::abs(val - median) < 2*mad){
-                k++;
-                sum += val;
+
+    void rotateProcessedCloud(  const Eigen::Vector3d           normal,
+                                std::vector<PointCloudT::Ptr>   &simplified_hulls,
+                                std::vector<PointCloudT::Ptr>   &super_planes,
+                                std::vector<Eigen::Vector4d>    &normal_vec,
+                                PointCloudT::Ptr                nonPlanar) {
+
+        if(simplified_hulls.size() != super_planes.size() || super_planes.size() != normal_vec.size()){
+            std::cerr << "boundaries, planes and normals of different size, exiting!!!" << std::endl;
+            exit(0);
+        }
+
+        // Get angle between [1 0 0] and normal.
+        double theta = std::atan2(normal[1], normal[0]);
+        Eigen::Affine3d transform = Eigen::Affine3d::Identity();
+        transform.rotate (Eigen::AngleAxisd (-theta, Eigen::Vector3d::UnitZ()));
+        pcl::transformPointCloud (*nonPlanar, *nonPlanar, transform);
+
+        // need to rotate each plane and the associated normal vector.
+        for (size_t i = 0; i < super_planes.size(); i++) {
+            // Transform boundaries and super voxels according to theta.
+            pcl::transformPointCloud (*simplified_hulls[i], *simplified_hulls[i], transform);
+            pcl::transformPointCloud (*super_planes[i], *super_planes[i], transform);
+
+            // Change the direction of the normal and find new distance from origin for the plane equation.
+            // Also perfectly align to x/y/z axis if similar enough.
+            normal_vec[i][0] = normal_vec[i][0]*std::cos(-theta) - normal_vec[i][1]*std::sin(-theta);
+            normal_vec[i][1] = normal_vec[i][0]*std::sin(-theta) + normal_vec[i][1]*std::cos(-theta);
+            int idx;
+            normal_vec[i].head(3).cwiseAbs().maxCoeff(&idx);
+            if(idx == 0){
+                if(std::abs(normal_vec[i][2]) < 0.15){
+                    // This is a wall like structures
+                    if(std::abs(normal_vec[i][1]) < 0.3){
+                        // Should most likely be a wall, align it to the axis.
+                        normal_vec[i][0] = 1;
+                        normal_vec[i][1] = 0;
+                        normal_vec[i][2] = 0;
+                    }
+                }
+                // Need to fix distance from origin after aligning.
+                PointT p1, p2;
+                pcl::getMinMax3D(*simplified_hulls[i], p1, p2);
+                p1.x = (p1.x + p2.x)/2.0;
+                p1.y = (p1.y + p2.y)/2.0;
+                p1.z = (p1.z + p2.z)/2.0;
+                normal_vec[i][3] = -(p1.x*normal_vec[i][0] + p1.y*normal_vec[i][1] + p1.z*normal_vec[i][2]);
+
+            } else if (idx == 1){
+                if(std::abs(normal_vec[i][2]) < 0.15){
+                    // This is a wall like structures
+                    if(std::abs(normal_vec[i][0]) < 0.3){
+                        // Should most likely be a wall, align it to the axis.
+                        normal_vec[i][0] = 0;
+                        normal_vec[i][1] = 1;
+                        normal_vec[i][2] = 0;
+                    }
+                }
+                // Need to fix distance from origin after aligning.
+                PointT p1, p2;
+                pcl::getMinMax3D(*simplified_hulls[i], p1, p2);
+                p1.x = (p1.x + p2.x)/2.0;
+                p1.y = (p1.y + p2.y)/2.0;
+                p1.z = (p1.z + p2.z)/2.0;
+                normal_vec[i][3] = -(p1.x*normal_vec[i][0] + p1.y*normal_vec[i][1] + p1.z*normal_vec[i][2]);
+            } else {
+                if(std::abs(normal_vec[i][2]) > 0.90){
+                    // floor like object
+                    normal_vec[i][0] = 0;
+                    normal_vec[i][1] = 0;
+                    normal_vec[i][2] = 1;
+
+                    PointT p1, p2;
+                    pcl::getMinMax3D(*simplified_hulls[i], p1, p2);
+                    p1.x = (p1.x + p2.x)/2.0;
+                    p1.y = (p1.y + p2.y)/2.0;
+                    p1.z = (p1.z + p2.z)/2.0;
+                    normal_vec[i][3] = -(p1.x*normal_vec[i][0] + p1.y*normal_vec[i][1] + p1.z*normal_vec[i][2]);
+                }
             }
         }
-        double mean = sum / k;
-        std::cout << "mean: " << mean << std::endl;
-        tmp[0] = mean;
-        tmp[1] = std::sqrt(1-std::pow(mean,2));
-        tmp[3] = 0;
-        for (size_t i = 0; i < tmp.size(); i++) {
-            std::cout << tmp[i] << std::endl;
-        }
-        return tmp;
     }
 
 
@@ -555,3 +577,82 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+
+
+// double theta = std::atan2(mean_norm[1], mean_norm[0]);
+// Eigen::Affine3d transform = Eigen::Affine3d::Identity();
+// transform.rotate (Eigen::AngleAxisd (-theta, Eigen::Vector3d::UnitZ()));
+// pcl::transformPointCloud (*nonPlanar, *nonPlanar, transform);
+//
+// // need to rotate each plane and the associated normal vector.
+// for (size_t i = 0; i < plane_vec.size(); i++) {
+//     auto printEigen_func = [](Eigen::VectorXd vec, std::string str){
+//         std::cout << str << ":  ";
+//         for (size_t i = 0; i < vec.size(); i++) {
+//             std::cout << vec[i];
+//             if(i != vec.size()-1) std::cout << ", ";
+//         }
+//         std::cout << " " << std::endl;
+//     };
+//     printEigen_func(normal_vec[i], "before");
+//     pcl::transformPointCloud (*plane_vec[i], *plane_vec[i], transform);
+//     normal_vec[i][0] = normal_vec[i][0]*std::cos(-theta) - normal_vec[i][1]*std::sin(-theta);
+//     normal_vec[i][1] = normal_vec[i][0]*std::sin(-theta) + normal_vec[i][1]*std::cos(-theta);
+//     printEigen_func(normal_vec[i], "rotated");
+//     int idx;
+//     normal_vec[i].head(3).cwiseAbs().maxCoeff(&idx);
+//     if(idx == 0){
+//         if(std::abs(normal_vec[i][2]) < 0.15){
+//             // This is a wall like structures
+//             if(std::abs(normal_vec[i][1]) < 0.3){
+//                 // Should most likely be a wall, align it to the axis.
+//                 normal_vec[i][0] = 1;
+//                 normal_vec[i][1] = 0;
+//                 normal_vec[i][2] = 0;
+//             }
+//         }
+//         // Need to fis distance from origin after aligning.
+//         PointT p1, p2;
+//         pcl::getMinMax3D(*plane_vec[i], p1, p2);
+//         p1.x = (p1.x + p2.x)/2.0;
+//         p1.y = (p1.y + p2.y)/2.0;
+//         p1.z = (p1.z + p2.z)/2.0;
+//         normal_vec[i][3] = -(p1.x*normal_vec[i][0] + p1.y*normal_vec[i][1] + p1.z*normal_vec[i][2]);
+//
+//     } else if (idx == 1){
+//         if(std::abs(normal_vec[i][2]) < 0.15){
+//             // This is a wall like structures
+//             if(std::abs(normal_vec[i][0]) < 0.3){
+//                 // Should most likely be a wall, align it to the axis.
+//                 normal_vec[i][0] = 0;
+//                 normal_vec[i][1] = 1;
+//                 normal_vec[i][2] = 0;
+//             }
+//         }
+//         // Need to fis distance from origin after aligning.
+//         PointT p1, p2;
+//         pcl::getMinMax3D(*plane_vec[i], p1, p2);
+//         p1.x = (p1.x + p2.x)/2.0;
+//         p1.y = (p1.y + p2.y)/2.0;
+//         p1.z = (p1.z + p2.z)/2.0;
+//         normal_vec[i][3] = -(p1.x*normal_vec[i][0] + p1.y*normal_vec[i][1] + p1.z*normal_vec[i][2]);
+//     } else {
+//         if(std::abs(normal_vec[i][2]) > 0.95){
+//             // floor like object
+//             normal_vec[i][0] = 0;
+//             normal_vec[i][1] = 0;
+//             normal_vec[i][2] = 1;
+//
+//             if(std::abs(normal_vec[i][3]) < 0.2){
+//                 normal_vec[i][3] = 0;
+//             }
+//         }
+//     }
+//     printEigen_func(normal_vec[i], "aligned");
+// }
+// // return;
+// // PROJECT TO PLANE
+// for ( size_t i = 0; i < normal_vec.size(); ++i ){
+//     EXX::compression::projectToPlaneS( plane_vec[i], normal_vec[i] );
+// }

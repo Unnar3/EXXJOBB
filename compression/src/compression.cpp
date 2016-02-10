@@ -602,34 +602,6 @@ namespace EXX{
 				points = cm[i].mesh.polygons[j].vertices;
 				std::sort(points.begin(), points.end());
 
-
-				// Check if connected boundary triangles have been connected
-				// if (points[0] == inlier_cnt){
-				// 	if(points[2] == inlier_cnt + hulls[i]->points.size()-1){
-				// 		boundary_count.front()++;
-				// 		boundary_count.back()++;
-				// 	}
-				// }
-				// if(points[0] >= inlier_cnt){
-				// 	if(points[1] - points[0] == 1){
-				// 		boundary_count[points[0]-inlier_cnt]++;
-				// 		boundary_count[points[1]-inlier_cnt]++;
-				// 	}
-				// 	// clear boundary_connections[points[0]]
-				// } else if (points[1] >= inlier_cnt){
-				// 	if(points[2] - points[1] == 1){
-				// 		boundary_count[points[1]-inlier_cnt]++;
-				// 		boundary_count[points[2]-inlier_cnt]++;
-				// 	}
-				// 	boundary_connections[points[1]-inlier_cnt].push_back(points[0]);
-				// 	boundary_connections[points[2]-inlier_cnt].push_back(points[0]);
-				// 	// clear boundary_connections[points[0]]
-				// } else if(points[2] >= inlier_cnt){
-				// 	boundary_count[points[2]-inlier_cnt]++;
-				// 	boundary_connections[points[2]-inlier_cnt].push_back(points[0]);
-				// 	boundary_connections[points[2]-inlier_cnt].push_back(points[1]);
-				// }
-
 				// Check if triangle is outside boundary
 				// Count number of boundary points in the triangle
 				bcount = std::count_if(points.begin(), points.end(),
@@ -645,68 +617,85 @@ namespace EXX{
 						polys.push_back(j);
 					}
 				}
-
 			}
 
 			std::sort(polys.begin(), polys.end(), std::greater<int>());
 			for ( auto j : polys ){
 				cm[i].mesh.polygons.erase(cm[i].mesh.polygons.begin() + j);
 			}
-
-
-			// int count = 0;
-			// pcl::Vertices vertices;
-			// vertices.vertices.resize(3);
-			// std::vector<int> intersections;
-			// for (size_t j = 0; j < boundary_count.size()-1; j++) {
-			// 	if(count > 1) break;
-			// 	if(boundary_count[j] < 2){
-			// 		cm[i].cloud->points[j + inlier_cnt].r = 255;
-			// 		cm[i].cloud->points[j + inlier_cnt].g = 255;
-			// 		cm[i].cloud->points[j + inlier_cnt].b = 0;
-			// 		count++;
-			// 	}
-
-
-				// special case if j == 0
-				// if(j == 0){
-				// 	if(boundary_count.front() < 2){
-				// 		if(boundary_count.back() < 2){
-				// 			intersections = utils::vectorIntersection(boundary_connections.front(), boundary_connections.back());
-				// 			if(intersections.size() > 0){
-				// 				vertices.vertices[0] = 0+inlier_cnt;
-				// 				vertices.vertices[1] = boundary_connections.size()-1+inlier_cnt;
-				// 				vertices.vertices[2] = intersections[0];
-				// 				std::cout << inlier_cnt << ": ";
-				// 				std::cout << vertices.vertices[0] << ", ";
-				// 				std::cout << vertices.vertices[1] << ", ";
-				// 				std::cout << vertices.vertices[2] << std::endl;
-				// 				cm[i].mesh.polygons.push_back(vertices);
-				// 			}
-				// 		}
-				// 	}
-				// }
-
-				// if(boundary_count[j] < 2){
-				// 	if(boundary_count[j+1] < 2){
-				// 		intersections = utils::vectorIntersection(boundary_connections[j], boundary_connections[j+1]);
-				// 		if(intersections.size() > 0){
-				// 			vertices.vertices[0] = j+inlier_cnt;
-				// 			vertices.vertices[1] = j+1+inlier_cnt;
-				// 			vertices.vertices[2] = intersections[0];
-				// 			cm[i].mesh.polygons.push_back(vertices);
-				// 			std::cout << inlier_cnt << ": ";
-				// 			std::cout << vertices.vertices[0] << ", ";
-				// 			std::cout << vertices.vertices[1] << ", ";
-				// 			std::cout << vertices.vertices[2] << std::endl;
-				// 		}
-				// 	}
-				// }
-			// }
-
 		}
-
 	}
+
+
+	Eigen::Vector3d compression::findMainNorm(const std::vector<Eigen::Vector4d> &normals){
+        std::vector<double> x;
+        std::vector<double> y;
+        x.reserve(normals.size());
+        y.reserve(normals.size());
+        Eigen::Vector3d tmp;
+
+        for(auto normal : normals){
+            int idx;
+            normal.head(3).cwiseAbs().maxCoeff(&idx);
+            if(idx != 2 && normal[2] < 0.1){
+                tmp = normal.head(3);
+                tmp[2] = 0;
+                tmp = tmp/tmp.norm();
+                // for (size_t i = 0; i < tmp.size(); i++) {
+                //     std::cout << tmp[i] << std::endl;
+                // }
+                // return tmp;
+                if(std::abs(tmp[1]) > std::abs(tmp[0])){
+                    // make x axis bigger by turning 90 degrees
+                    double value = tmp[0];
+                    tmp[0] = tmp[1];
+                    tmp[1] = -value;
+                }
+                if(tmp[0] < 0){
+                    tmp[0] *= -1;
+                    tmp[1] *= -1;
+                }
+                x.push_back(tmp[0]);
+                y.push_back(tmp[1]);
+                std::cout << "x: " << x.back() << "  y: " << y.back() << std::endl;
+            }
+        }
+        // median of vector
+        auto median_func = [](std::vector<double> x)->double{
+            std::sort(x.begin(), x.end());
+            if(x.size()%2 == 0)
+                return (x[x.size()/2 - 1] + x[x.size()/2]) / 2.0;
+            return x[x.size()/2];
+        };
+
+        double median = median_func(x);
+        std::vector<double> x_median(x.size());
+        std::transform(x.begin(),x.end(),x_median.begin(),
+            [median](double x_val){
+                return std::abs(x_val - median);
+            }
+        );
+        double mad = median_func(x_median);
+
+        int k = 0;
+        double sum = 0;
+        for(auto val : x){
+            if(std::abs(val - median) < 2*mad){
+                k++;
+                sum += val;
+            }
+        }
+        double mean = sum / k;
+        tmp[0] = mean;
+        tmp[1] = std::sqrt(1-std::pow(mean,2));
+        tmp[3] = 0;
+        for (size_t i = 0; i < tmp.size(); i++) {
+            std::cout << tmp[i] << std::endl;
+        }
+        return tmp;
+    }
+
+
 
 	double compression::pointToLineDistance(PointT current, PointT next, PointT nextCheck){
 		std::vector<float> x0x1;

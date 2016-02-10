@@ -61,36 +61,36 @@ class compression{
 	std::vector<cloudMesh > cloud_mesh_;
 
 public:
-	compression() : 
+	compression() :
 		v_leaf_size_(0.02f),
-		sv_voxel_res_(0.1f), 
-		sv_seed_res_(0.3f), 
-		sv_color_imp_(0.5f), 
+		sv_voxel_res_(0.1f),
+		sv_seed_res_(0.3f),
+		sv_color_imp_(0.5f),
 		sv_spatial_imp_(0.1f),
-		max_ite_(100), 
+		max_ite_(100),
 		min_inliers_(200),
-		max_number_planes_(100), 
-		dist_thresh_(0.04f), 
+		max_number_planes_(100),
+		dist_thresh_(0.04f),
 		ec_cluster_tolerance_(0.05f),
 		ec_min_cluster_size_(100),
-		hull_alpha_(0.1f), 
+		hull_alpha_(0.1f),
 		rw_hull_eps_(0.04f),
-		rw_hull_max_dist_(0.3f), 
+		rw_hull_max_dist_(0.3f),
 		simplify_hulls_(true),
-		gp3_search_rad_(0.3f), 
-		gp3_Mu_(3.0f), 
+		gp3_search_rad_(0.3f),
+		gp3_Mu_(3.0f),
 		gp3_max_surface_angle_(M_PI/4.0f),
-		gp3_min_angle_(M_PI/20),  
+		gp3_min_angle_(M_PI/20),
 		gp3_max_angle_(2.0f*M_PI/2.5f),
-		gp3_max_nearest_neighbours_(100), 
+		gp3_max_nearest_neighbours_(100),
 		gp3_Ksearch_(20)
 	{ }
 	~compression(){ };
 
 	void triangulate();
 	void triangulatePlanes();
-	
-	// Filtering Methods 
+
+	// Filtering Methods
 	void voxelGridFilter(PointCloudT::Ptr cloud, PointCloudT::Ptr out_cloud);
 	void superVoxelClustering(vPointCloudT *cloud, vPointCloudT *out_vec, std::vector<densityDescriptor> &dDesc);
 
@@ -120,6 +120,11 @@ public:
 	void greedyProjectionTriangulationPlanes(PointCloudT::Ptr nonPlanar, vPointCloudT &planes, vPointCloudT &hulls, std::vector<cloudMesh> &cm,std::vector<float> &dDesc);
 	void improveTriangulation(std::vector<cloudMesh> &cm, vPointCloudT &planes, vPointCloudT &hulls);
 	void improveTriangulation2(std::vector<cloudMesh> &cm, vPointCloudT &planes, vPointCloudT &hulls, std::vector<std::vector<float> > &normals);
+
+
+    // ALIGNING
+    Eigen::Vector3d findMainNorm(const std::vector<Eigen::Vector4d> &normals);
+
 
 	// SET METHODS
 	void setVoxelLeafSize(float leaf){ v_leaf_size_ = leaf; }
