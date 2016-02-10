@@ -125,6 +125,13 @@ public:
     // ALIGNING
     Eigen::Vector3d findMainNorm(const std::vector<Eigen::Vector4d> &normals);
 
+	void rotateToAxis(	std::vector<PointCloudT::Ptr>   &planes,
+						std::vector<Eigen::Vector4d>    &normal_vec,
+						PointCloudT::Ptr                nonPlanar);
+	void rotateToAxis(	const Eigen::Vector3d           normal,
+                        std::vector<PointCloudT::Ptr>   &planes,
+                        std::vector<Eigen::Vector4d>    &normal_vec,
+                        PointCloudT::Ptr                nonPlanar);
 
 	// SET METHODS
 	void setVoxelLeafSize(float leaf){ v_leaf_size_ = leaf; }
