@@ -24,6 +24,7 @@
 #include <pcl/common/common.h>
 
 // OTHER
+#include <Refinement/SurfaceRefinement.h>
 #include <boost/thread/thread.hpp>
 #include <tf_conversions/tf_eigen.h>
 #include <pcl/console/parse.h>
@@ -124,7 +125,7 @@ public:
         planeSegmentation(segment, normals, plane_vec, normal_vec, nonPlanar);
         // Eigen::Vector3d mean_norm = cmprs.findMainNorm(normal_vec);
         // rotateProcessedCloud(mean_norm, plane_vec, normal_vec, nonPlanar);
-        cmprs.rotateToAxis(normal_vec, plane_vec)
+        cmprs.rotateToAxis(plane_vec, normal_vec, nonPlanar);
         mergePlanes(plane_vec, normal_vec);
 
         // PROJECT TO PLANE
