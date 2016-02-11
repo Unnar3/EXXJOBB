@@ -123,8 +123,6 @@ public:
         std::vector<Eigen::Vector4d> normal_vec;
         PointCloudT::Ptr nonPlanar (new PointCloudT());
         planeSegmentation(segment, normals, plane_vec, normal_vec, nonPlanar);
-        // Eigen::Vector3d mean_norm = cmprs.findMainNorm(normal_vec);
-        // rotateProcessedCloud(mean_norm, plane_vec, normal_vec, nonPlanar);
         cmprs.rotateToAxis(plane_vec, normal_vec, nonPlanar);
         mergePlanes(plane_vec, normal_vec);
 

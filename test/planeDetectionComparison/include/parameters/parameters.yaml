@@ -1,0 +1,43 @@
+{
+
+# Path to clouds
+# path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_Waypoints/WayPoint9/20151221/patrol_run_9/room_1/,
+# path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_longterm_surfels/20140820/patrol_run_2/room_1/,
+path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_longterm_surfels/20140820/patrol_run_4/room_0/,
+# path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_longterm_surfels/20140828/patrol_run_19/room_3/,
+
+# Kitchen
+# path                    : /media/unnar/HDD/thesis/pointclouds/KTH/KTH_Waypoints/WayPoint10/20160107/patrol_run_16/room_0/,
+
+
+# Compression class params
+VoxelLeafSize           : 0.01, # Cannot be smaller than SVVoxelResolution
+SVVoxelResolution       : 0.01,
+SVSeedResolution        : 0.1,
+SVColorImportance       : 0.1,
+SVSpatialImportance     : 5.0,
+RWHullMaxDist           : 0.1,
+hullAlpha               : 0.1,
+
+# Strand ransac params
+disjoinedSet            : 10,
+octree_res              : 1.0,
+normal_neigbourhood     : 0.03,
+inlier_threshold        : 0.05,
+inlier_min              : 2000,
+min_shape               : 2000,
+angle_threshold         : 0.20,
+add_threshold           : 0.05,
+connectedness_res       : 0.1,
+distance_threshold      : 0.0,
+
+# Reconstruction
+GP3SearchRad            : 10.0,
+GP3Mu                   : 0.05,
+GP3MaxNearestNeighbours : 100,
+GP3Ksearch              : 50,
+
+# TOPICS
+TOPIC_POINT_CLOUD       : "/camera/depth_registered/points",
+HZ                      : 20,
+}
