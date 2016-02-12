@@ -127,6 +127,10 @@ public:
 
         planeDetection::planeSegmentationEfficientPPR(segment, normals, params, plane_vec, normal_vec, nonPlanar);
 
+        for(auto plane : plane_vec){
+            std::cout << plane->points.size() << std::endl;
+        }
+
         // std::vector<PointCloudT::Ptr> plane_vec_nils;
         // std::vector<Eigen::Vector4d> normal_vec_nils;
         // PointCloudT::Ptr nonPlanar_nils (new PointCloudT());
@@ -233,45 +237,45 @@ private:
         return normals;
     }
 
-    // Euclidean Cluster Extraction from PCL.
-    // Inputs:
-    //  cloud, single PointCloud that we wan't to extract clusters from.
-    //  tolerance, maximum distance between points so that they belong to same cluster.
-    //  min_size, minimum number of points in a cluster.
-    //  max_size, maximum number of points in a cluster.
-    // Output:
-    //  outvec, vector containing PointClouds where each PointCloud represents a single cluster.
-    template<typename PT>
-    void ecClustering(const typename pcl::PointCloud<PT>::Ptr cloud, const float tolerance, const float min_size, const float max_size,
-        std::vector<typename pcl::PointCloud<PT>::Ptr> &outvec){
-
-        typename pcl::search::KdTree<PT>::Ptr tree (new pcl::search::KdTree<PT>);
-        tree->setInputCloud(cloud);
-
-        std::vector<pcl::PointIndices> cluster_indices;
-        pcl::EuclideanClusterExtraction<PT> ec;
-        ec.setClusterTolerance(tolerance); // 2cm
-        ec.setMinClusterSize(min_size);
-        ec.setMaxClusterSize(max_size);
-        ec.setSearchMethod(tree);
-        ec.setInputCloud(cloud);
-        ec.extract(cluster_indices);
-
-        for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
-        {
-            PT p;
-            typename pcl::PointCloud<PT>::Ptr tmp_cloud (new pcl::PointCloud<PT>());
-            tmp_cloud->points.reserve(it->indices.size());
-            for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit){
-                p = cloud->points[*pit];
-                tmp_cloud->points.push_back(p);
-            }
-            tmp_cloud->width = tmp_cloud->points.size ();
-            tmp_cloud->height = 1;
-            tmp_cloud->is_dense = true;
-            outvec.push_back(tmp_cloud);
-        }
-    };
+    // // Euclidean Cluster Extraction from PCL.
+    // // Inputs:
+    // //  cloud, single PointCloud that we wan't to extract clusters from.
+    // //  tolerance, maximum distance between points so that they belong to same cluster.
+    // //  min_size, minimum number of points in a cluster.
+    // //  max_size, maximum number of points in a cluster.
+    // // Output:
+    // //  outvec, vector containing PointClouds where each PointCloud represents a single cluster.
+    // template<typename PT>
+    // void ecClustering(const typename pcl::PointCloud<PT>::Ptr cloud, const float tolerance, const float min_size, const float max_size,
+    //     std::vector<typename pcl::PointCloud<PT>::Ptr> &outvec){
+    //
+    //     typename pcl::search::KdTree<PT>::Ptr tree (new pcl::search::KdTree<PT>);
+    //     tree->setInputCloud(cloud);
+    //
+    //     std::vector<pcl::PointIndices> cluster_indices;
+    //     pcl::EuclideanClusterExtraction<PT> ec;
+    //     ec.setClusterTolerance(tolerance); // 2cm
+    //     ec.setMinClusterSize(min_size);
+    //     ec.setMaxClusterSize(max_size);
+    //     ec.setSearchMethod(tree);
+    //     ec.setInputCloud(cloud);
+    //     ec.extract(cluster_indices);
+    //
+    //     for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
+    //     {
+    //         PT p;
+    //         typename pcl::PointCloud<PT>::Ptr tmp_cloud (new pcl::PointCloud<PT>());
+    //         tmp_cloud->points.reserve(it->indices.size());
+    //         for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit){
+    //             p = cloud->points[*pit];
+    //             tmp_cloud->points.push_back(p);
+    //         }
+    //         tmp_cloud->width = tmp_cloud->points.size ();
+    //         tmp_cloud->height = 1;
+    //         tmp_cloud->is_dense = true;
+    //         outvec.push_back(tmp_cloud);
+    //     }
+    // };
 
 
 
@@ -308,7 +312,7 @@ private:
     {
         // Check if out is empty an clear it if is not
         if( out->points.size() == 0 ) out->clear();
-        
+
         combinePlanes(planes, out);
 
         int red, green, blue;

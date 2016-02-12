@@ -80,9 +80,9 @@ namespace planeDetection{
 		}
 
 
-		std::cout << "Coefficients" << std::endl;
-        std::cout << coefficients->values[0] << ", " << coefficients->values[1] << ", " << coefficients->values[2] << std::endl;
-        std::cout << p->normal_x << ", " << p->normal_y << ", " << p->normal_z << std::endl;
+		// std::cout << "Coefficients" << std::endl;
+        // std::cout << coefficients->values[0] << ", " << coefficients->values[1] << ", " << coefficients->values[2] << std::endl;
+        // std::cout << p->normal_x << ", " << p->normal_y << ", " << p->normal_z << std::endl;
 		coefficients->values[0] = p->normal_x;
 		coefficients->values[1] = p->normal_y;
 		coefficients->values[2] = p->normal_z;

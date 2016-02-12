@@ -1,11 +1,8 @@
 
+#include <planeDetectionComparison/utils.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/ModelCoefficients.h>
-#include <pcl/kdtree/kdtree.h>
-#include <pcl/kdtree/kdtree_flann.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/segmentation/extract_clusters.h>
 
 #include <ransac_primitives/primitive_core.h>
 #include <ransac_primitives/plane_primitive.h>
@@ -58,35 +55,21 @@ namespace planeDetection{
 
     }
 
-    void extractIndices(PointCloudT::Ptr        cloud,
-                        PointCloudT::Ptr        plane,
-                        pcl::PointIndices::Ptr  inliers){
-
-        //
-        PointCloudT::Ptr cloud_tmp (new PointCloudT());
-        pcl::ExtractIndices<PointT> extract;
-        extract.setInputCloud (cloud);
-        extract.setIndices (inliers);
-        extract.setNegative (false);
-        extract.filter (*plane);
-
-        // Remove the planar inliers, extract the rest
-        extract.setNegative (true);
-        extract.filter (*cloud_tmp);
-        cloud.swap (cloud_tmp);
-    }
 
     void runPPR(const PointCloudT::Ptr          cloud_in,
                 std::vector<pcl::PointIndices::Ptr> &indicesv,
                 std::vector<ModelCoeffT::Ptr>   &coeffv,
                 std::vector<PointCloudT::Ptr>   &plane_vec,
+                std::vector<ModelCoeffT::Ptr>   &normal_vec,
                 PointCloudT::Ptr                nonPlanar){
 
 
         if(plane_vec.size() > 0){
             plane_vec.clear();
+            normal_vec.clear();
         }
         plane_vec.reserve(indicesv.size());
+        normal_vec.reserve(indicesv.size());
 
         PointCloudT::Ptr cloud_tmp (new PointCloudT());
         *nonPlanar = *cloud_in;
@@ -94,9 +77,15 @@ namespace planeDetection{
             pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
             inliers = segmentPPR(nonPlanar, coeff);
 
-            PointCloudT::Ptr cloud_plane (new PointCloudT());
-            extractIndices(nonPlanar, cloud_plane, inliers);
-            plane_vec.push_back(cloud_plane);
+            std::vector<PointCloudT::Ptr> planes;
+            // PointCloudT::Ptr cloud_plane (new PointCloudT());
+            extractIndices(nonPlanar, planes, inliers);
+            for (size_t i = 0; i < planes.size(); i++) {
+                /* code */
+                std::cout << "hmmmmmmmmmmmmm" << std::endl;
+                plane_vec.push_back(planes[i]);
+                normal_vec.push_back(coeff);
+            }
         }
     }
 
@@ -107,12 +96,13 @@ namespace planeDetection{
                                         const PointCloudN::Ptr              normals,
                                         const primitive_params              params,
                                         std::vector<PointCloudT::Ptr>     & plane_vec,
-                                        std::vector<ModelCoeffT::Ptr>     & coeffv,
+                                        std::vector<ModelCoeffT::Ptr>     & coeff_vec,
                                         PointCloudT::Ptr                    nonPlanar){
 
         std::vector<pcl::PointIndices::Ptr> indicesv;
+        std::vector<ModelCoeffT::Ptr>       coeffv;
         planeSegmentationEfficientPlanes(cloud, normals, params, indicesv, coeffv);
-        runPPR(cloud, indicesv, coeffv, plane_vec, nonPlanar);
+        runPPR(cloud, indicesv, coeffv, plane_vec, coeff_vec, nonPlanar);
 
     }
 
