@@ -24,7 +24,9 @@
 #include <pcl/common/common.h>
 
 // OTHER
-#include <planeDetectionComparison/planeSegementationPCL.h>
+#include <planeDetectionComparison/planeSegmentationPCL.h>
+#include <planeDetectionComparison/planeSegmentationPPR.h>
+#include <planeDetectionComparison/planeSegmentationEfficient.h>
 #include <Refinement/SurfaceRefinement.h>
 #include <boost/thread/thread.hpp>
 #include <tf_conversions/tf_eigen.h>
@@ -119,39 +121,41 @@ public:
         normals = compute_surfel_normals(surfel_cloud, segment);
 
         std::vector<PointCloudT::Ptr> plane_vec;
-        std::vector<Eigen::Vector4d> normal_vec;
+        // std::vector<Eigen::Vector4d> normal_vec;
+        std::vector<pcl::ModelCoefficients::Ptr> normal_vec;
         PointCloudT::Ptr nonPlanar (new PointCloudT());
 
-        planeDetection::planeSegmentationPCL(segment, normals, plane_vec, normal_vec, nonPlanar);
+        planeDetection::planeSegmentationEfficientPPR(segment, normals, params, plane_vec, normal_vec, nonPlanar);
 
-        std::vector<PointCloudT::Ptr> plane_vec_nils;
-        std::vector<Eigen::Vector4d> normal_vec_nils;
-        PointCloudT::Ptr nonPlanar_nils (new PointCloudT());
-        planeSegmentationNILS(segment, normals, plane_vec_nils, normal_vec_nils, nonPlanar_nils);
+        // std::vector<PointCloudT::Ptr> plane_vec_nils;
+        // std::vector<Eigen::Vector4d> normal_vec_nils;
+        // PointCloudT::Ptr nonPlanar_nils (new PointCloudT());
+        // planeSegmentationNILS(segment, normals, plane_vec_nils, normal_vec_nils, nonPlanar_nils);
 
         // PROJECT TO PLANE
         for ( size_t i = 0; i < normal_vec.size(); ++i ){
             EXX::compression::projectToPlaneS( plane_vec[i], normal_vec[i] );
         }
-        // PROJECT TO PLANE
-        for ( size_t i = 0; i < normal_vec_nils.size(); ++i ){
-            EXX::compression::projectToPlaneS( plane_vec_nils[i], normal_vec_nils[i] );
-        }
+        // // PROJECT TO PLANE
+        // for ( size_t i = 0; i < normal_vec_nils.size(); ++i ){
+        //     EXX::compression::projectToPlaneS( plane_vec_nils[i], normal_vec_nils[i] );
+        // }
 
 
         PointCloudT::Ptr outCloudPCL( new PointCloudT() );
-        combinePlanes(plane_vec, nonPlanar, outCloudPCL);
+        combinePlanes(plane_vec, outCloudPCL);
+        // combinePlanes(plane_vec, nonPlanar, outCloudPCL);
 
         pcl::PCDWriter writer;
-        writer.write(path + "outCloudPCL.pcd", *outCloudPCL);
+        writer.write(path + "outCloudEfficientPPR.pcd", *outCloudPCL);
 
-        PointCloudT::Ptr outCloudNILS( new PointCloudT() );
-        PointCloudT::Ptr tmp( new PointCloudT() );
-        combinePlanes(plane_vec_nils, tmp, outCloudNILS);
-
-        // pcl::PCDWriter writer;
-        writer.write(path + "outCloudNILS.pcd", *outCloudNILS);
-        // cloudPublish( nonPlanarFiltered, super_planes, simplified_hulls, dDesc, normal_vec );
+        // PointCloudT::Ptr outCloudNILS( new PointCloudT() );
+        // PointCloudT::Ptr tmp( new PointCloudT() );
+        // combinePlanes(plane_vec_nils, tmp, outCloudNILS);
+        //
+        // // pcl::PCDWriter writer;
+        // writer.write(path + "outCloudNILS.pcd", *outCloudNILS);
+        // // cloudPublish( nonPlanarFiltered, super_planes, simplified_hulls, dDesc, normal_vec );
     }
 
 private:
@@ -281,7 +285,6 @@ private:
 
 
     void combinePlanes( const   std::vector<PointCloudT::Ptr>   &planes,
-                        const   PointCloudT::Ptr                nonPlanar,
                                 PointCloudT::Ptr                out)
     {
         // Check if out is empty an clear it if is not
@@ -297,13 +300,25 @@ private:
                 out->points[i].b = blue;
             }
         }
+    }
+
+    void combinePlanes( const   std::vector<PointCloudT::Ptr>   &planes,
+                        const   PointCloudT::Ptr                nonPlanar,
+                                PointCloudT::Ptr                out)
+    {
+        // Check if out is empty an clear it if is not
+        if( out->points.size() == 0 ) out->clear();
+        
+        combinePlanes(planes, out);
+
+        int red, green, blue;
         generateRandomColor(137,196,244, red,green,blue);
         int sizeOut = out->points.size();
         *out += *nonPlanar;
         for (size_t i = sizeOut; i < out->points.size(); i++) {
-            out->points[i].r = 0;
-            out->points[i].g = 0;
-            out->points[i].b = 0;
+            out->points[i].r = 255;
+            out->points[i].g = 255;
+            out->points[i].b = 255;
         }
     }
 
