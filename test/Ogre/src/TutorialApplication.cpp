@@ -30,7 +30,7 @@ This source file is part of the
 #include <pcl/search/kdtree.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/PolygonMesh.h>
-#include <simple_xml_parser.h>
+#include <metaroom_xml_parser/simple_xml_parser.h>
 
 #include <OgreManualObject.h>
 #include <CEGUI/CEGUI.h>

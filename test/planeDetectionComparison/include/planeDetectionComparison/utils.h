@@ -83,7 +83,7 @@ namespace planeDetection{
             // return;
 
             std::vector<pcl::PointIndices> cluster_indices;
-            ecClustering<PointT>(plane, 0.1, 500, 1000000, planes, cluster_indices);
+            ecClustering<PointT>(plane, 0.05, 2000, 1000000, planes, cluster_indices);
 
             std::cout << planes.size() << std::endl;
             *planet = *plane;
@@ -94,15 +94,11 @@ namespace planeDetection{
                 tmp->indices.insert(tmp->indices.end(), ind.indices.begin(), ind.indices.end());
             }
 
-            pcl::ExtractIndices<PointT> extract2;
-            extract2.setInputCloud (planet);
-            extract2.setIndices (tmp);
-            extract2.setNegative (true);
-            extract2.filter (*cloud_tmpt);
-            // std::cout << "size: " << std::endl;
-            // std::cout << cloud->points.size() << std::endl;
+            extract.setInputCloud (planet);
+            extract.setIndices (tmp);
+            extract.setNegative (true);
+            extract.filter (*cloud_tmpt);
             *cloud += *cloud_tmpt;
-            // std::cout << cloud->points.size() << std::endl;
 
         }
 }

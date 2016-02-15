@@ -19,7 +19,7 @@ namespace planeDetection{
 
 		ppr::SurfaceRefinement * refinement;
 		refinement = new ppr::SurfaceRefinement();
-		refinement->use_colors = false;
+		refinement->use_colors = true;
 		refinement->setDebugg(false);
 		refinement->setVisualize(false);
 		refinement->setMaxDistance(0.1f);

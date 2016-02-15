@@ -7,7 +7,7 @@
 #include <utils/utils.cpp>
 #include <ransac_primitives/primitive_core.h>
 #include <ransac_primitives/plane_primitive.h>
-#include <simple_xml_parser.h>
+#include <metaroom_xml_parser/simple_xml_parser.h>
 #include <PointTypes/surfel_type.h>
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
@@ -111,6 +111,9 @@ public:
         reader.read (path + "surfel_map.pcd", *surfel_cloud);
         reader.read (path + "complete_cloud.pcd", *segment);
 
+        std::cout << "surfel: " << surfel_cloud->points.size() << std::endl;
+        std::cout << "segment: " << segment->points.size() << std::endl;
+
         auto sweep = SimpleXMLParser<PointT>::loadRoomFromXML(path + "room.xml");
         tf::StampedTransform rotationTF = sweep.vIntermediateRoomCloudTransforms.front();
         Eigen::Affine3d trans;
@@ -120,46 +123,46 @@ public:
         pcl::transformPointCloudWithNormals (*surfel_cloud, *surfel_cloud, trans);
         normals = compute_surfel_normals(surfel_cloud, segment);
 
-        std::vector<PointCloudT::Ptr> plane_vec;
-        // std::vector<Eigen::Vector4d> normal_vec;
-        std::vector<pcl::ModelCoefficients::Ptr> normal_vec;
+        std::vector<PointCloudT::Ptr> plane_vec_efficient_ppr;
+        std::vector<pcl::ModelCoefficients::Ptr> normal_vec_efficient_ppr;
         PointCloudT::Ptr nonPlanar (new PointCloudT());
 
-        planeDetection::planeSegmentationEfficientPPR(segment, normals, params, plane_vec, normal_vec, nonPlanar);
-
-        for(auto plane : plane_vec){
-            std::cout << plane->points.size() << std::endl;
-        }
-
-        // std::vector<PointCloudT::Ptr> plane_vec_nils;
-        // std::vector<Eigen::Vector4d> normal_vec_nils;
-        // PointCloudT::Ptr nonPlanar_nils (new PointCloudT());
-        // planeSegmentationNILS(segment, normals, plane_vec_nils, normal_vec_nils, nonPlanar_nils);
-
+        std::cout << "Efficient PPR..................." << std::endl;
+        planeDetection::planeSegmentationEfficientPPR(segment, normals, params, plane_vec_efficient_ppr, normal_vec_efficient_ppr, nonPlanar);
         // PROJECT TO PLANE
-        for ( size_t i = 0; i < normal_vec.size(); ++i ){
-            EXX::compression::projectToPlaneS( plane_vec[i], normal_vec[i] );
+        for ( size_t i = 0; i < normal_vec_efficient_ppr.size(); ++i ){
+            EXX::compression::projectToPlaneS( plane_vec_efficient_ppr[i], normal_vec_efficient_ppr[i] );
         }
-        // // PROJECT TO PLANE
-        // for ( size_t i = 0; i < normal_vec_nils.size(); ++i ){
-        //     EXX::compression::projectToPlaneS( plane_vec_nils[i], normal_vec_nils[i] );
-        // }
+        PointCloudT::Ptr outCloudEfficientPPR( new PointCloudT() );
+        combinePlanes(plane_vec_efficient_ppr, outCloudEfficientPPR);
+
+        std::vector<PointCloudT::Ptr> plane_vec_pcl_ppr;
+        std::vector<Eigen::Vector4d> normal_vec_pcl_ppr;
+        std::cout << "PCL PPR.........................." << std::endl;
+        planeDetection::planeSegmentationPPR(segment, normals, plane_vec_pcl_ppr, normal_vec_pcl_ppr, nonPlanar);
+        for ( size_t i = 0; i < normal_vec_pcl_ppr.size(); ++i ){
+            EXX::compression::projectToPlaneS( plane_vec_pcl_ppr[i], normal_vec_pcl_ppr[i] );
+        }
+        PointCloudT::Ptr outCloudPCLPPR( new PointCloudT() );
+        combinePlanes(plane_vec_pcl_ppr, outCloudPCLPPR);
 
 
+        std::vector<PointCloudT::Ptr> plane_vec_pcl_;
+        std::vector<Eigen::Vector4d> normal_vec_pcl_;
+        std::cout << "PCL..............................." << std::endl;
+        planeDetection::planeSegmentationPPR(segment, normals, plane_vec_pcl_, normal_vec_pcl_, nonPlanar);
+        for ( size_t i = 0; i < normal_vec_pcl_.size(); ++i ){
+            EXX::compression::projectToPlaneS( plane_vec_pcl_[i], normal_vec_pcl_[i] );
+        }
         PointCloudT::Ptr outCloudPCL( new PointCloudT() );
-        combinePlanes(plane_vec, outCloudPCL);
-        // combinePlanes(plane_vec, nonPlanar, outCloudPCL);
+        combinePlanes(plane_vec_pcl_, outCloudPCL);
+
 
         pcl::PCDWriter writer;
-        writer.write(path + "outCloudEfficientPPR.pcd", *outCloudPCL);
+        writer.write(path + "outCloudEfficientPPR.pcd", *outCloudEfficientPPR);
+        writer.write(path + "outCloudPCLPPR.pcd", *outCloudPCLPPR);
+        writer.write(path + "outCloudPCL.pcd", *outCloudPCL);
 
-        // PointCloudT::Ptr outCloudNILS( new PointCloudT() );
-        // PointCloudT::Ptr tmp( new PointCloudT() );
-        // combinePlanes(plane_vec_nils, tmp, outCloudNILS);
-        //
-        // // pcl::PCDWriter writer;
-        // writer.write(path + "outCloudNILS.pcd", *outCloudNILS);
-        // // cloudPublish( nonPlanarFiltered, super_planes, simplified_hulls, dDesc, normal_vec );
     }
 
 private:

@@ -7,7 +7,7 @@
 #include <utils/utils.cpp>
 #include <ransac_primitives/primitive_core.h>
 #include <ransac_primitives/plane_primitive.h>
-#include <simple_xml_parser.h>
+#include <metaroom_xml_parser/simple_xml_parser.h>
 #include <PointTypes/surfel_type.h>
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>

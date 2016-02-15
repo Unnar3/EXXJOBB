@@ -8,7 +8,7 @@
 #include <ransac_primitives/primitive_core.h>
 #include <ransac_primitives/plane_primitive.h>
 #include <pcl/filters/extract_indices.h>    
-#include <simple_xml_parser.h>
+#include <metaroom_xml_parser/simple_xml_parser.h>
 // PCL specific includes
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/Image.h>

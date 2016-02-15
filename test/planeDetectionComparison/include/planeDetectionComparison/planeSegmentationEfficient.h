@@ -19,7 +19,6 @@ typedef std::vector<PointCloudT::Ptr> vPointCloudT;
 typedef std::vector<PointCloudTA::Ptr> vPointCloudTA;
 
 namespace planeDetection{
-
     void planeSegmentationEfficientPlanes(const PointCloudT::Ptr cloud_in,
                             const PointCloudN::Ptr          normals,
                             const primitive_params          params,
@@ -82,7 +81,6 @@ namespace planeDetection{
             extractIndices(nonPlanar, planes, inliers);
             for (size_t i = 0; i < planes.size(); i++) {
                 /* code */
-                std::cout << "hmmmmmmmmmmmmm" << std::endl;
                 plane_vec.push_back(planes[i]);
                 normal_vec.push_back(coeff);
             }
