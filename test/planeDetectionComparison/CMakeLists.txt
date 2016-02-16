@@ -39,3 +39,6 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 add_executable(comparison src/comparison.cpp)
 target_link_libraries(comparison ${catkin_LIBRARIES} ${QT_LIBRARIES} compression)
+
+add_executable(createTestCloud src/createTestCloud.cpp)
+target_link_libraries(createTestCloud ${catkin_LIBRARIES})
