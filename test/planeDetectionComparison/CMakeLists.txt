@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   	metaroom_xml_parser
   	qt_build
    tf_conversions
+   pcl_conversions
 )
 
 rosbuild_prepare_qt4(QtCore QtXml)

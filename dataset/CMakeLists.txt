@@ -1,13 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(exx_dataset)
 
-set(CMAKE_CXX_FLAGS "-O4 -g -fPIC -std=c++0x -O4")
+set(CMAKE_CXX_FLAGS "-O4 -g -fPIC -std=c++0x")
 
 find_package(catkin REQUIRED COMPONENTS
   	sensor_msgs
 	roscpp
 	std_msgs
-	pcl_conversions
   	pcl_ros
   	metaroom_xml_parser
   	qt_build
