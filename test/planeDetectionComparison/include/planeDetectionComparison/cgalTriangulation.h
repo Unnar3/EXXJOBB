@@ -11,6 +11,7 @@
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 #include <CGAL/Spatial_sort_traits_adapter_2.h>
 
+#include <Eigen/Dense>
 #include <vector>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel                 Kernel;
@@ -44,15 +45,28 @@ void pclPlaneToCGAL(    pcl::PointCloud<PointT>::Ptr plane,
 // Implementation
 /////////////////////////////////////////////////////////////
 
-
+// Takes in PointCloud where all points are lying on a plane and projects that plane to 2d.
 template <typename PointT>
 void pclPlaneToCGAL(    pcl::PointCloud<PointT>::Ptr plane,
                         pcl::PointCloud<PointT>::Ptr boundary,
-                        pcl::ModelCoefficients::Ptr coeff
-                        std::vector<std::vector<unsigned int> > &idx){
+                        pcl::ModelCoefficients::Ptr coeff,
+                        std::vector<Point > &plane_2d,
+                        std::vector<Point > &boundary_2d){
 
-    // blah
-    
+    // Create the normal vector
+    Eigen::Vector3f normal;
+    for (size_t i = 0; i < normal.size(); i++) {
+        normal[i] = coeff->values[i];
+    }
+    normal = normal/normal.norm();
+
+    // Create arbitrary vector U not parallell to normal to find a new X/Y axis
+    Eigen::Vector3f U(1,0,0);
+    if( std::abs(normal.dot(U)) > 0.8 ){
+        // U to similar to normal change it to [0 1 0].
+        U[0] = 0; U[1] = 1;
+    }
+
 }
 
 
