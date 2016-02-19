@@ -66,8 +66,8 @@ int main(int argc, char **argv) {
     // ros::init(argc, argv, "createTestCloud");
     // ros::Rate loop_rate(10);
 
-    double tableDistFromWall = 0.03;
-    double variance = 0.01;
+    double tableDistFromWall = 0.1;
+    double variance = 0.001;
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_floor (new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_wall1 (new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -83,47 +83,47 @@ int main(int argc, char **argv) {
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_window5 (new pcl::PointCloud<pcl::PointXYZRGB>);
 
     // resize clouds
-    cloud_floor->width  = 20000;
+    cloud_floor->width  = 40000;
     cloud_floor->height = 1;
     cloud_floor->points.resize (cloud_floor->width * cloud_floor->height);
 
-    cloud_wall1->width  = 20000;
+    cloud_wall1->width  = 40000;
     cloud_wall1->height = 1;
     cloud_wall1->points.resize (cloud_wall1->width * cloud_wall1->height);
 
-    cloud_wall2->width  = 20000;
+    cloud_wall2->width  = 40000;
     cloud_wall2->height = 1;
     cloud_wall2->points.resize (cloud_wall2->width * cloud_wall2->height);
 
-    cloud_shelf1->width  = 8000;
+    cloud_shelf1->width  = 16000;
     cloud_shelf1->height = 1;
     cloud_shelf1->points.resize (cloud_shelf1->width * cloud_shelf1->height);
 
-    cloud_shelf2->width  = 8000;
+    cloud_shelf2->width  = 16000;
     cloud_shelf2->height = 1;
     cloud_shelf2->points.resize (cloud_shelf2->width * cloud_shelf2->height);
 
-    cloud_shelf3->width  = 4000;
+    cloud_shelf3->width  = 8000;
     cloud_shelf3->height = 1;
     cloud_shelf3->points.resize (cloud_shelf3->width * cloud_shelf3->height);
 
-    cloud_table->width  = 4000;
+    cloud_table->width  = 8000;
     cloud_table->height = 1;
     cloud_table->points.resize (cloud_table->width * cloud_table->height);
 
-    cloud_window1->width  = 2000;
+    cloud_window1->width  = 5000;
     cloud_window1->height = 1;
     cloud_window1->points.resize (cloud_window1->width * cloud_window1->height);
-    cloud_window2->width  = 2000;
+    cloud_window2->width  = 5000;
     cloud_window2->height = 1;
     cloud_window2->points.resize (cloud_window2->width * cloud_window2->height);
-    cloud_window3->width  = 2000;
+    cloud_window3->width  = 5000;
     cloud_window3->height = 1;
     cloud_window3->points.resize (cloud_window3->width * cloud_window3->height);
-    cloud_window4->width  = 2000;
+    cloud_window4->width  = 5000;
     cloud_window4->height = 1;
     cloud_window4->points.resize (cloud_window4->width * cloud_window4->height);
-    cloud_window5->width  = 2000;
+    cloud_window5->width  = 5000;
     cloud_window5->height = 1;
     cloud_window5->points.resize (cloud_window5->width * cloud_window5->height);
 
