@@ -4,6 +4,9 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
 
+#include <pcl/for_each_type.h>
+#include <pcl/point_traits.h>
+
 typedef pcl::PointXYZRGB PointT;
 typedef pcl::PointCloud<PointT> PointCloudT;
 typedef pcl::Normal PointN;
@@ -83,9 +86,9 @@ namespace planeDetection{
             // return;
 
             std::vector<pcl::PointIndices> cluster_indices;
-            ecClustering<PointT>(plane, 0.05, 2000, 1000000, planes, cluster_indices);
+            ecClustering<PointT>(plane, 0.1, 400, 1000000, planes, cluster_indices);
 
-            std::cout << planes.size() << std::endl;
+            std::cout << "planes size: " << planes.size() << std::endl;
             *planet = *plane;
             pcl::PointIndices::Ptr tmp (new pcl::PointIndices());
             for(auto ind : cluster_indices){
@@ -100,6 +103,39 @@ namespace planeDetection{
             extract.filter (*cloud_tmpt);
             *cloud += *cloud_tmpt;
 
+        }
+
+
+        template<typename PointT> void
+        toMeshCloud (const pcl::PointCloud<PointT>& cloud, pcl::PCLPointCloud2& msg)
+        {
+            // Ease the user's burden on specifying width/height for unorganized datasets
+            if (cloud.width == 0 && cloud.height == 0)
+            {
+              msg.width  = static_cast<uint32_t>(cloud.points.size ());
+              msg.height = 1;
+            }
+            else
+            {
+              assert (cloud.points.size () == cloud.width * cloud.height);
+              msg.height = cloud.height;
+              msg.width  = cloud.width;
+            }
+
+            // Fill point cloud binary data (padding and all)
+            size_t data_size = sizeof (PointT) * cloud.points.size ();
+            msg.data.resize (data_size);
+            memcpy (&msg.data[0], &cloud.points[0], data_size);
+
+            // Fill fields metadata
+            msg.fields.clear ();
+            pcl::for_each_type<typename pcl::traits::fieldList<PointT>::type> (pcl::detail::FieldAdder<PointT>(msg.fields));
+
+            msg.header     = cloud.header;
+            msg.point_step = sizeof (PointT);
+            msg.row_step   = static_cast<uint32_t> (sizeof (PointT) * msg.width);
+            msg.is_dense   = cloud.is_dense;
+            /// @todo msg.is_bigendian = ?;
         }
 }
 

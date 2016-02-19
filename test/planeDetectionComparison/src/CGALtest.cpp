@@ -125,7 +125,7 @@ int main(int argc, char **argv) {
     viewer->addPolygonMesh(mesh,"meshes",0);
     viewer->addCoordinateSystem (1.0);
     viewer->initCameraParameters ();
-    while (!viewer->wasStopped ()){s
+    while (!viewer->wasStopped ()){
         viewer->spinOnce (100);
         boost::this_thread::sleep (boost::posix_time::microseconds (100000));
     }

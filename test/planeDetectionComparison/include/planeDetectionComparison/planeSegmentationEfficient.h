@@ -54,6 +54,40 @@ namespace planeDetection{
 
     }
 
+    void planeSegmentationEfficientPlanes(const PointCloudT::Ptr cloud_in,
+                            const primitive_params          params,
+                            std::vector<pcl::PointIndices::Ptr> &indicesv,
+                            std::vector<ModelCoeffT::Ptr>   &coeffv
+                            ){
+        // Perform the compression
+        // RANSAC
+        std::vector<base_primitive*> primitives = { new plane_primitive() };
+        primitive_extractor<PointT> extractor(cloud_in, primitives, params, NULL);
+        std::vector<base_primitive*> extracted;
+        extractor.extract(extracted);
+
+        std::vector<int> ind;
+        coeffv.reserve(extracted.size());
+        indicesv.reserve(extracted.size());
+        pcl::ExtractIndices<PointT> extract;
+        Eigen::VectorXd data;
+        for (size_t j = 0; j < extracted.size(); ++j){
+            pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+            inliers->indices = extracted[j]->supporting_inds;
+            indicesv.push_back(inliers);
+
+            extracted.at(j)->shape_data(data);
+            ModelCoeffT::Ptr coefficients (new ModelCoeffT);
+            coefficients->values.resize(4);
+            coefficients->values[0] = data[0];
+            coefficients->values[1] = data[1];
+            coefficients->values[2] = data[2];
+            coefficients->values[3] = data[3];
+            coeffv.push_back(coefficients);
+        }
+
+    }
+
 
     void runPPR(const PointCloudT::Ptr          cloud_in,
                 std::vector<pcl::PointIndices::Ptr> &indicesv,
@@ -100,6 +134,19 @@ namespace planeDetection{
         std::vector<pcl::PointIndices::Ptr> indicesv;
         std::vector<ModelCoeffT::Ptr>       coeffv;
         planeSegmentationEfficientPlanes(cloud, normals, params, indicesv, coeffv);
+        runPPR(cloud, indicesv, coeffv, plane_vec, coeff_vec, nonPlanar);
+
+    }
+
+    void planeSegmentationEfficientPPR( const PointCloudT::Ptr              cloud,
+                                        const primitive_params              params,
+                                        std::vector<PointCloudT::Ptr>     & plane_vec,
+                                        std::vector<ModelCoeffT::Ptr>     & coeff_vec,
+                                        PointCloudT::Ptr                    nonPlanar){
+
+        std::vector<pcl::PointIndices::Ptr> indicesv;
+        std::vector<ModelCoeffT::Ptr>       coeffv;
+        planeSegmentationEfficientPlanes(cloud, params, indicesv, coeffv);
         runPPR(cloud, indicesv, coeffv, plane_vec, coeff_vec, nonPlanar);
 
     }

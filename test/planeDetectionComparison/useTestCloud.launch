@@ -1,0 +1,5 @@
+<launch>
+	<node pkg="planeDetectionComparison" type="useTestCloud" name="useTestCloud" clear_params="true" output="screen">
+		<rosparam file="$(find planeDetectionComparison)/include/parameters/parameters.yaml" command="load"/>
+	</node>
+</launch>
