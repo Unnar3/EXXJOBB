@@ -136,6 +136,7 @@ namespace planeDetection{
         planeSegmentationEfficientPlanes(cloud, normals, params, indicesv, coeffv);
         runPPR(cloud, indicesv, coeffv, plane_vec, coeff_vec, nonPlanar);
 
+
     }
 
     void planeSegmentationEfficientPPR( const PointCloudT::Ptr              cloud,

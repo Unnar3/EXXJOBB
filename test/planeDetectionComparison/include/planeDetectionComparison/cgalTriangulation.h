@@ -119,6 +119,11 @@ void constrainedDelaunayTriangulation(  std::vector<Point>                      
                                         std::vector<Point>                      constraines,
                                         std::vector<std::vector<unsigned int> > &idx){
 
+
+    auto dist_func = [](Point a, Point b){
+        return std::pow(b[0] - a[0], 2) + std::pow(b[1] - a[1], 2) < 0.01;
+    };
+
     CDT cdt;
 
     if(points.size() < 3) return;
@@ -129,18 +134,26 @@ void constrainedDelaunayTriangulation(  std::vector<Point>                      
     insert_with_info(cdt, points.begin(),points.end());
 
     // Insert the constraints (boundary).
+    int hull_close = 0;
     if(constraines.size() > 1){
         for (size_t i = 0; i < constraines.size()-1; i++) {
-            cdt.insert_constraint(constraines[i], constraines[i+1]);
+            if( dist_func(constraines[i], constraines[i+1]) ){
+                cdt.insert_constraint(constraines[i], constraines[i+1]);
+            } else if( dist_func(constraines[i], constraines[0]) ){
+                cdt.insert_constraint(constraines[i], constraines[0]);
+                hull_close = i;
+            }
         }
+        if( dist_func(constraines[hull_close], constraines[constraines.size()-1]) ){
+            cdt.insert_constraint(constraines[hull_close], constraines[constraines.size()-1]);
+        }
+
 
         // put the correct index on the constraine points.
         auto it = cdt.vertices_begin();
-        std::cout << "size: " << size << std::endl;
         std::advance(it, size);
         for(; it != cdt.vertices_end(); ++it){
             it->info() = size;
-            std::cout << size << std::endl;
             size++;
         }
     }
