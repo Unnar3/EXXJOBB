@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   	pcl_ros
   	metaroom_xml_parser
   	qt_build
+    tf_conversions
 )
 
 rosbuild_prepare_qt4(QtCore QtXml)
@@ -32,3 +33,6 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 add_executable(copy_waypoints src/copy_waypoints.cpp)
 target_link_libraries(copy_waypoints ${catkin_LIBRARIES} ${QT_LIBRARIES})
+
+add_executable(complete_lower src/complete_lower.cpp)
+target_link_libraries(complete_lower ${catkin_LIBRARIES} ${QT_LIBRARIES})
