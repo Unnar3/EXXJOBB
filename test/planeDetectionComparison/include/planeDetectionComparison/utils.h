@@ -80,10 +80,7 @@ namespace planeDetection{
             // Remove the planar inliers, extract the rest
             extract.setNegative (true);
             extract.filter (*cloud_tmp);
-            cloud.swap (cloud_tmp);
-
-            // planes.push_back(plane);
-            // return;
+            (*cloud).swap (*cloud_tmp);
 
             std::vector<pcl::PointIndices> cluster_indices;
             ecClustering<PointT>(plane, 0.1, 400, 1000000, planes, cluster_indices);

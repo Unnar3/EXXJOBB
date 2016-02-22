@@ -121,6 +121,10 @@ public:
 
         std::cout << "Efficient PPR..................." << std::endl;
         planeDetection::planeSegmentationEfficientPPR(segment, params, plane_vec, normal_vec, nonPlanar);
+        for (size_t i = 0; i < 2; i++) {
+            std::cout << "size: " << plane_vec[i]->points.size() << std::endl;
+        }
+
         // PROJECT TO PLANE
         for ( size_t i = 0; i < normal_vec.size(); ++i ){
             EXX::compression::projectToPlaneS( plane_vec[i], normal_vec[i] );
@@ -135,14 +139,15 @@ public:
         // FIND CONCAVE HULL/* message */
         cmprs.planeToConcaveHull(&plane_vec, &hulls);
         cmprs.getPlaneDensity( plane_vec, hulls, dDesc);
-        cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
+        // cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
         // cmprs.cornerMatching(plane_vec, simplified_hulls, normal_vec);
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
 
         int s = 0;
         PointCloudT::Ptr combined (new PointCloudT());
         pcl::PolygonMesh mesh;
-        for (size_t i = 0; i < plane_vec.size(); i++) {
+        // for (size_t i = 0; i < plane_vec.size(); i++) {
+        for (size_t i = 2; i < 3; i++) {
 
             std::vector<Point> plane_2d;
             std::vector<Point> boundary_2d;
@@ -151,14 +156,34 @@ public:
             std::vector<std::vector<unsigned int> > idx;
             constrainedDelaunayTriangulation(plane_2d, boundary_2d, idx);
 
-            *combined += *super_planes[i];
-            for(auto &p : hulls[i]->points){
-                p.r = 150;
-                p.g = 150;
-                p.b = 150;
+            for(auto IDX : idx){
+                for(auto vert : IDX){
+                    if(vert <= 0 || vert >= super_planes[i]->points.size() + hulls[i]->points.size()){
+                        std::cout << "hmm " << vert << std::endl;
+                    }
+                }
             }
-            *combined += *hulls[i];
 
+
+            int red, green, blue;
+            generateRandomColor(133,133,133, red, green, blue);
+            for(auto &p : super_planes[i]->points ){
+                p.r = red;
+                p.g = green;
+                p.b = blue;
+            }
+
+            float b = 255.0 / (hulls[i]->points.size());
+            float v = 0.0;
+            for(auto &p : hulls[i]->points){
+                p.r = 255;
+                p.g = 255;
+                p.b = v;
+                v += b;
+            }
+
+            *combined += *super_planes[i];
+            *combined += *hulls[i];
 
             pcl::Vertices vert;
             vert.vertices.resize(3);
@@ -173,6 +198,10 @@ public:
             s = s + super_planes[i]->points.size() + hulls[i]->points.size();
 
         }
+        pcl::PCDWriter writer;
+        // writer.write(path + "outCloudEfficientPPR.pcd", *outCloudEfficientPPR);
+        writer.write(path + "outCloudEfficientPPR.pcd", *combined);
+
         planeDetection::toMeshCloud(*combined, mesh.cloud);
 
         boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
@@ -186,11 +215,9 @@ public:
         }
 
 
-        PointCloudT::Ptr outCloudEfficientPPR( new PointCloudT() );
-        combinePlanes(plane_vec, outCloudEfficientPPR);
+        // PointCloudT::Ptr outCloudEfficientPPR( new PointCloudT() );
+        // combinePlanes(plane_vec, outCloudEfficientPPR);
 
-        pcl::PCDWriter writer;
-        writer.write(path + "outCloudEfficientPPR.pcd", *outCloudEfficientPPR);
 
     }
 
