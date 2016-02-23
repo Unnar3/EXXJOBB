@@ -19,9 +19,13 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/segmentation/extract_clusters.h>
-#include <pcl/visualization/cloud_viewer.h>
+// #include <pcl/visualization/cloud_viewer.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/io/vtk_lib_io.h>
+// #include <pcl/io/file_io.h>
 #include <pcl/filters/project_inliers.h>
 #include <pcl/common/common.h>
+#include <pcl/io/ply_io.h>
 
 // OTHER
 #include <planeDetectionComparison/planeSegmentationPCL.h>
@@ -58,8 +62,11 @@ using NormalCloudT = pcl::PointCloud<NormalT>;
 using SurfelT = SurfelType;
 using SurfelCloudT = pcl::PointCloud<SurfelT>;
 
+using namespace pcl::visualization;
 using namespace EXX::params;
 using namespace EXX;
+
+PCLVisualizer::Ptr viewer;
 
 class UseTestCloud
 {
@@ -102,6 +109,7 @@ public:
         std::cout << "leaf size: " << cmprs.getVoxelLeafSize() << std::endl;
     }
 
+
     void testCloud(void){
         std::string path = loadParam<std::string>("path_test", nh);
 
@@ -139,30 +147,31 @@ public:
         // FIND CONCAVE HULL/* message */
         cmprs.planeToConcaveHull(&plane_vec, &hulls);
         cmprs.getPlaneDensity( plane_vec, hulls, dDesc);
-        // cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
+        cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
         // cmprs.cornerMatching(plane_vec, simplified_hulls, normal_vec);
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
 
         int s = 0;
         PointCloudT::Ptr combined (new PointCloudT());
-        pcl::PolygonMesh mesh;
+        // pcl::PolygonMesh mesh;
+        std::vector<pcl::Vertices> vertices;
         // for (size_t i = 0; i < plane_vec.size(); i++) {
         for (size_t i = 2; i < 3; i++) {
 
             std::vector<Point> plane_2d;
             std::vector<Point> boundary_2d;
 
-            pclPlaneToCGAL<pcl::PointXYZRGB>(super_planes[i], hulls[i], normal_vec[i], plane_2d, boundary_2d);
+            pclPlaneToCGAL<pcl::PointXYZRGB>(super_planes[i], simplified_hulls[i], normal_vec[i], plane_2d, boundary_2d);
             std::vector<std::vector<unsigned int> > idx;
             constrainedDelaunayTriangulation(plane_2d, boundary_2d, idx);
 
-            for(auto IDX : idx){
-                for(auto vert : IDX){
-                    if(vert <= 0 || vert >= super_planes[i]->points.size() + hulls[i]->points.size()){
-                        std::cout << "hmm " << vert << std::endl;
-                    }
-                }
-            }
+            // for(auto IDX : idx){
+            //     for(auto vert : IDX){
+            //         if(vert <= 0 || vert >= super_planes[i]->points.size() + simplified_hulls[i]->points.size()){
+            //             std::cout << "hmm " << vert << std::endl;
+            //         }
+            //     }
+            // }
 
 
             int red, green, blue;
@@ -173,9 +182,9 @@ public:
                 p.b = blue;
             }
 
-            float b = 255.0 / (hulls[i]->points.size());
+            float b = 255.0 / (simplified_hulls[i]->points.size());
             float v = 0.0;
-            for(auto &p : hulls[i]->points){
+            for(auto &p : simplified_hulls[i]->points){
                 p.r = 255;
                 p.g = 255;
                 p.b = v;
@@ -183,41 +192,47 @@ public:
             }
 
             *combined += *super_planes[i];
-            *combined += *hulls[i];
+            *combined += *simplified_hulls[i];
 
             pcl::Vertices vert;
             vert.vertices.resize(3);
+            int super_size = super_planes[i]->points.size();
             for(auto poly : idx){
+                if(poly[0] >= super_size && poly[1] >= super_size && poly[2] >= super_size){
+                    std::cout << "super: " << super_size << ", ";
+                    std::cout << poly[0] << ", " << poly[1] << ", " << poly[2] << std::endl;
+                    continue;
+                }
                 vert.vertices[0] = poly[0]+s;
                 vert.vertices[1] = poly[1]+s;
                 vert.vertices[2] = poly[2]+s;
-                mesh.polygons.push_back(vert);
+                vertices.push_back(vert);
                 // std::cout << poly[0] << ", " << poly[1] << ", " << poly[2] << std::endl;
                 // std::cout << "-----------------------" << std::endl;
             }
             s = s + super_planes[i]->points.size() + hulls[i]->points.size();
 
         }
+
+        cloudPublish(combined, vertices);
+
         pcl::PCDWriter writer;
         // writer.write(path + "outCloudEfficientPPR.pcd", *outCloudEfficientPPR);
         writer.write(path + "outCloudEfficientPPR.pcd", *combined);
 
-        planeDetection::toMeshCloud(*combined, mesh.cloud);
+        // planeDetection::toMeshCloud(*combined, mesh.cloud);
+        // mesh.polygons = vertices;
 
-        boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-        viewer->setBackgroundColor (0, 0, 0);
-        viewer->addPolygonMesh(mesh,"meshes",0);
-        viewer->addCoordinateSystem (1.0);
-        viewer->initCameraParameters ();
-        while (!viewer->wasStopped ()){
-            viewer->spinOnce (100);
-            boost::this_thread::sleep (boost::posix_time::microseconds (100000));
-        }
-
-
-        // PointCloudT::Ptr outCloudEfficientPPR( new PointCloudT() );
-        // combinePlanes(plane_vec, outCloudEfficientPPR);
-
+        // pcl::visualization::PCLVisualizer::Ptr viewer;
+        // // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+        // viewer.reset(new pcl::visualization::PCLVisualizer);
+        // // viewer->setBackgroundColor (0, 0, 0);
+        // viewer.reset(new PCLVisualizer);
+        // viewer->addPolygonMesh<PointT>(combined, vertices);
+        // // viewer->setShapeRenderingProperties(PCL_VISUALIZER_SHADING, PCL_VISUALIZER_SHADING_PHONG, "polygon");
+        // // viewer->setPointCloudRenderingProperties(PCL_VISUALIZER_SHADING, PCL_VISUALIZER_SHADING_GOURAUD, "polygon");
+        // viewer->spin();
+        // pcl::io::savePLYFile (path + "meshlab.ply", mesh);
 
     }
 
@@ -344,29 +359,27 @@ private:
     }
 
 
-    void cloudPublish(PointCloudT::Ptr nonPlanar ,std::vector<PointCloudT::Ptr> &planes, std::vector<PointCloudT::Ptr> &hulls, std::vector<EXX::densityDescriptor> &dDesc,std::vector<Eigen::Vector4d> &normal)
+    void cloudPublish(PointCloudT::Ptr plane, std::vector<pcl::Vertices> vertices)
     {
         exx_compression::planes pmsgs;
-        exx_compression::normal norm;
         sensor_msgs::PointCloud2 output_p;
         sensor_msgs::PointCloud2 output_h;
         sensor_msgs::PointCloud2 output;
         Eigen::Vector4f tmpnormal;
 
-        for (size_t i = 0; i < planes.size(); ++i){
-            pcl::toROSMsg(*planes[i] , output_p);
-            pcl::toROSMsg(*hulls[i] , output_h);
-            pmsgs.planes.push_back(output_p);
-            pmsgs.hulls.push_back(output_h);
-            pmsgs.gp3_rad.push_back(dDesc[i].gp3_search_rad);
-            tmpnormal = normal[i].cast<float>();
-            norm.normal.push_back(tmpnormal[0]);
-            norm.normal.push_back(tmpnormal[1]);
-            norm.normal.push_back(tmpnormal[2]);
+        pcl::toROSMsg(*plane , output_p);
+        pmsgs.planes.push_back(output_p);
+        // tmpnormal = normal[i].cast<float>();
+
+        for (size_t i = 0; i < vertices.size(); i++) {
+
+            exx_compression::normal norm;
+            norm.normal.push_back(vertices[i].vertices[0]);
+            norm.normal.push_back(vertices[i].vertices[1]);
+            norm.normal.push_back(vertices[i].vertices[2]);
             pmsgs.normal.push_back(norm);
         }
-        pcl::toROSMsg(*nonPlanar , output);
-        pmsgs.nonPlanar = output;
+
         point_cloud_publisher.publish (pmsgs);
     }
 };

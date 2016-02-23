@@ -80,50 +80,84 @@ void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointC
     //     }
     // }
 
-    std::vector<EXX::cloudMesh> cmesh;
-    std::cout << "trian" << std::endl;
-    cmprs.greedyProjectionTriangulationPlanes(nonPlanar, planes, hulls, cmesh, gp3_rad);
-    std::cout << "impr" << std::endl;
-    cmprs.improveTriangulation2(cmesh, planes, hulls, normals);
-    std::cout << "hmm" << std::endl;
-
-
-    std::cout << "Normal: " << std::endl;
-    std::for_each(normals[0].begin(), normals[0].end(), [](float val){std::cout << " " << val;});
-    std::cout << " " << std::endl;
+    // std::vector<EXX::cloudMesh> cmesh;
+    // std::cout << "trian" << std::endl;
+    // cmprs.greedyProjectionTriangulationPlanes(nonPlanar, planes, hulls, cmesh, gp3_rad);
+    // std::cout << "impr" << std::endl;
+    // cmprs.improveTriangulation2(cmesh, planes, hulls, normals);
+    // std::cout << "hmm" << std::endl;
+    //
+    //
+    // std::cout << "Normal: " << std::endl;
+    // std::for_each(normals[0].begin(), normals[0].end(), [](float val){std::cout << " " << val;});
+    // std::cout << " " << std::endl;
     manual->clear();
     manual->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST);
 
-    PointCloudT::Ptr tmp_cloud (new PointCloudT ());
-    for (int i = 0; i < cmesh.size(); ++i){
-        *tmp_cloud += *cmesh[i].cloud;
-    }
+    // PointCloudT::Ptr tmp_cloud (new PointCloudT ());
+    // for (int i = 0; i < cmesh.size(); ++i){
+    //     *tmp_cloud += *cmesh[i].cloud;
+    // }
 
     int pic = 0;
     Ogre::Real r, g, b;
-    for (std::vector<EXX::cloudMesh>::iterator ite = cmesh.begin(); ite < cmesh.end(); ++ite){
 
-        for (size_t i = 0; i < (*ite).cloud->points.size(); i++){
-            manual->position((*ite).cloud->points[i].x, -(*ite).cloud->points[i].y, -(*ite).cloud->points[i].z);
-            r = (Ogre::Real)(*ite).cloud->points[i].r / (Ogre::Real)255;
-            g = (Ogre::Real)(*ite).cloud->points[i].g / (Ogre::Real)255;
-            b = (Ogre::Real)(*ite).cloud->points[i].b / (Ogre::Real)255;
-            manual->colour(r, g, b);
-        }
-        for (size_t i = 0; i < (*ite).mesh.polygons.size(); ++i){
-            // Add triangle facing one way
-            for (size_t j = 0; j < (*ite).mesh.polygons[i].vertices.size(); ++j)
-            {
-                manual->index((*ite).mesh.polygons[i].vertices[j] + pic);
-            }
-            // Add same triangles facing the other way
-            for (size_t j = (*ite).mesh.polygons[i].vertices.size(); j-- > 0; )
-            {
-                manual->index((*ite).mesh.polygons[i].vertices[j] + pic);
-            }
-        }
-        pic += (*ite).cloud->points.size();
+    for (size_t i = 0; i < planes[0]->points.size(); i++){
+        std::cout << planes[0]->points[i].x << ", " << -planes[0]->points[i].y << ", " << -planes[0]->points[i].z << std::endl;
+        manual->position(planes[0]->points[i].x, -planes[0]->points[i].y, -planes[0]->points[i].z);
+        r = (Ogre::Real)planes[0]->points[i].r / (Ogre::Real)255;
+        g = (Ogre::Real)planes[0]->points[i].g / (Ogre::Real)255;
+        b = (Ogre::Real)planes[0]->points[i].b / (Ogre::Real)255;
+        // r = (Ogre::Real)255 / (Ogre::Real)255;
+        // g = (Ogre::Real)255 / (Ogre::Real)255;
+        // b = (Ogre::Real)255 / (Ogre::Real)255;
+        manual->colour(r, g, b);
     }
+
+    std::cout << "planes.size(): " << planes[0]->points.size() << std::endl;
+
+    for (size_t i = 0; i < normals.size(); ++i){
+        // Add triangle facing one way
+        for (size_t j = 0; j < 3; ++j)
+        {
+            // std::cout << "hmmmmmm" << std::endl;
+            int k = (int)normals[i][j];
+            std::cout << "k: " << k << std::endl;
+            manual->index(k);
+        }
+        // Add same triangles facing the other way
+        for (size_t j = 3; j-- > 0; )
+        {
+            int k = (int)normals[i][j];
+            // std::cout << "k: " << k << std::endl;
+            manual->index(k);
+        }
+    }
+
+
+    // for (std::vector<EXX::cloudMesh>::iterator ite = cmesh.begin(); ite < cmesh.end(); ++ite){
+    //
+    //     for (size_t i = 0; i < (*ite).cloud->points.size(); i++){
+    //         manual->position((*ite).cloud->points[i].x, -(*ite).cloud->points[i].y, -(*ite).cloud->points[i].z);
+    //         r = (Ogre::Real)(*ite).cloud->points[i].r / (Ogre::Real)255;
+    //         g = (Ogre::Real)(*ite).cloud->points[i].g / (Ogre::Real)255;
+    //         b = (Ogre::Real)(*ite).cloud->points[i].b / (Ogre::Real)255;
+    //         manual->colour(r, g, b);
+    //     }
+    //     for (size_t i = 0; i < (*ite).mesh.polygons.size(); ++i){
+    //         // Add triangle facing one way
+    //         for (size_t j = 0; j < (*ite).mesh.polygons[i].vertices.size(); ++j)
+    //         {
+    //             manual->index((*ite).mesh.polygons[i].vertices[j] + pic);
+    //         }
+    //         // Add same triangles facing the other way
+    //         for (size_t j = (*ite).mesh.polygons[i].vertices.size(); j-- > 0; )
+    //         {
+    //             manual->index((*ite).mesh.polygons[i].vertices[j] + pic);
+    //         }
+    //     }
+    //     pic += (*ite).cloud->points.size();
+    // }
     manual->end();
 
     if (first){
