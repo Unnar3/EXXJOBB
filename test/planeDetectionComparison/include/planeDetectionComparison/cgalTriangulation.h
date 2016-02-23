@@ -9,12 +9,24 @@
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Spatial_sort_traits_adapter_2.h>
+#include <CGAL/Polygon_2.h>
 
 #include <PointTypes/surfel_type.h>
 #include <typedefs/typedef.h>
 #include <Eigen/Dense>
 #include <vector>
+
+// struct FaceInfo2
+// {
+//   FaceInfo2(){}
+//   int nesting_level;
+//
+//   bool in_domain(){
+//     return nesting_level%2 == 1;
+//   }
+// };
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel                 Kernel;
 typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned int, Kernel>   Vb;
@@ -24,8 +36,10 @@ typedef Kernel::Point_2                                                     Poin
 typedef CGAL::Constrained_triangulation_face_base_2<Kernel>                 Fb;
 typedef CGAL::Triangulation_data_structure_2<Vb,Fb>                         TDS;
 typedef CGAL::Exact_predicates_tag                                          Itag;
+// typedef CGAL::No_intersection_tag                                           Itag;
 typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, Itag>       CDT;
 typedef CGAL::Spatial_sort_traits_adapter_2<Kernel,Point*>                  Search_traits;
+typedef CGAL::Polygon_2<Kernel>                                             Polygon_2;
 
 using PointT = pcl::PointXYZRGB;
 using PointCloudT = pcl::PointCloud<PointT>;
@@ -64,6 +78,11 @@ void pclPlaneToCGAL(    typename pcl::PointCloud<T>::Ptr    plane,
                         pcl::ModelCoefficients::Ptr         coeff,
                         std::vector<Point >               & plane_2d,
                         std::vector<Point >               & boundary_2d){
+
+
+    std::cout << "plane size: " << plane->points.size() << std::endl;
+    std::cout << "boundary size: " << boundary->points.size() << std::endl;
+    std::cout << "combined size: " << plane->points.size() + boundary->points.size() << std::endl;
 
     // Make sure 2d vectors are empty and efficient.
     if(plane_2d.size() != 0){
@@ -115,14 +134,113 @@ void pclPlaneToCGAL(    typename pcl::PointCloud<T>::Ptr    plane,
 }
 
 
+// void
+// mark_domains(CDT& ct,
+//              CDT::Face_handle start,
+//              int index,
+//              std::list<CDT::Edge>& border )
+// {
+//   if(start->info().nesting_level != -1){
+//     return;
+//   }
+//   std::list<CDT::Face_handle> queue;
+//   queue.push_back(start);
+//
+//   while(! queue.empty()){
+//     CDT::Face_handle fh = queue.front();
+//     queue.pop_front();
+//     if(fh->info().nesting_level == -1){
+//       fh->info().nesting_level = index;
+//       for(int i = 0; i < 3; i++){
+//         CDT::Edge e(fh,i);
+//         CDT::Face_handle n = fh->neighbor(i);
+//         if(n->info().nesting_level == -1){
+//           if(ct.is_constrained(e)) border.push_back(e);
+//           else queue.push_back(n);
+//         }
+//       }
+//     }
+//   }
+// }
+//
+// //explore set of facets connected with non constrained edges,
+// //and attribute to each such set a nesting level.
+// //We start from facets incident to the infinite vertex, with a nesting
+// //level of 0. Then we recursively consider the non-explored facets incident
+// //to constrained edges bounding the former set and increase the nesting level by 1.
+// //Facets in the domain are those with an odd nesting level.
+// void
+// mark_domains(CDT& cdt)
+// {
+//   for(CDT::All_faces_iterator it = cdt.all_faces_begin(); it != cdt.all_faces_end(); ++it){
+//     it->info().nesting_level = -1;
+//   }
+//
+//   int index = 0;
+//   std::list<CDT::Edge> border;
+//   mark_domains(cdt, cdt.infinite_face(), index++, border);
+//   while(! border.empty()){
+//     CDT::Edge e = border.front();
+//     border.pop_front();
+//     CDT::Face_handle n = e.first->neighbor(e.second);
+//     if(n->info().nesting_level == -1){
+//       mark_domains(cdt, n, e.first->info().nesting_level+1, border);
+//     }
+//   }
+// }
+
+
+void insert_polygon(CDT& cdt,const Polygon_2& polygon){
+  if ( polygon.is_empty() ) return;
+  CDT::Vertex_handle v_prev=cdt.insert(*CGAL::cpp11::prev(polygon.vertices_end()));
+  for (Polygon_2::Vertex_iterator vit=polygon.vertices_begin();
+       vit!=polygon.vertices_end();++vit)
+  {
+    CDT::Vertex_handle vh=cdt.insert(*vit);
+    cdt.insert_constraint(vh,v_prev);
+    v_prev=vh;
+  }
+}
+
+
 void constrainedDelaunayTriangulation(  std::vector<Point>                      points,
                                         std::vector<Point>                      constraines,
                                         std::vector<std::vector<unsigned int> > &idx){
 
 
     auto dist_func = [](Point a, Point b){
-        return std::pow(b[0] - a[0], 2) + std::pow(b[1] - a[1], 2) < 0.01;
+        return std::pow(b[0] - a[0], 2) + std::pow(b[1] - a[1], 2) < 0.5;
     };
+
+    Polygon_2 polygon;
+    std::vector<Polygon_2> polygons;
+    polygons.push_back(polygon);
+    int k = 0;
+    int startP = 0;
+    for (size_t i = 0; i < constraines.size()-1; i++) {
+        if(dist_func(constraines[i], constraines[i+1])){
+            if(i == startP){
+                polygons[k].push_back(constraines[startP]);
+            }
+            polygons[k].push_back(constraines[i+1]);
+        } else {
+            k++;
+            startP = i+1;
+            polygons.push_back(polygon);
+            // break;
+        }
+
+    }
+    int l = 0;
+    for(auto poly : polygons){
+        std::cout << "poly: " << l++ << std::endl;
+        // for(auto p : poly) {
+        for (size_t i = 0; i < poly.size(); i++) {
+            /* code */
+            std::cout << poly[i] << std::endl;
+        }
+    }
+
 
     CDT cdt;
 
@@ -136,17 +254,13 @@ void constrainedDelaunayTriangulation(  std::vector<Point>                      
     // Insert the constraints (boundary).
     int hull_close = 0;
     if(constraines.size() > 1){
-        for (size_t i = 0; i < constraines.size()-1; i++) {
-            if( dist_func(constraines[i], constraines[i+1]) ){
-                cdt.insert_constraint(constraines[i], constraines[i+1]);
-            } else if( dist_func(constraines[i], constraines[0]) ){
-                cdt.insert_constraint(constraines[i], constraines[0]);
-                hull_close = i;
+        for(auto pol : polygons){
+            if(pol.size() > 5){
+                insert_polygon(cdt, pol);
             }
         }
-        if( dist_func(constraines[hull_close], constraines[constraines.size()-1]) ){
-            cdt.insert_constraint(constraines[hull_close], constraines[constraines.size()-1]);
-        }
+        //Mark facets that are inside the domain bounded by the polygon
+        // mark_domains(cdt);
 
 
         // put the correct index on the constraine points.
@@ -154,8 +268,10 @@ void constrainedDelaunayTriangulation(  std::vector<Point>                      
         std::advance(it, size);
         for(; it != cdt.vertices_end(); ++it){
             it->info() = size;
+            // std::cout << size << std::endl;
             size++;
         }
+        // std::cout << "vertices count: " << cdt.number_of_vertices()  << std::endl;
     }
 
     // Clear Idx if not empty and reserve approximate size;

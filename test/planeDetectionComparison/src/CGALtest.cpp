@@ -18,17 +18,17 @@
 #include <pcl_conversions/pcl_conversions.h>
 #include <vector>
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel            Kernel;
-typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned int, Kernel> Vb;
-typedef CGAL::Triangulation_data_structure_2<Vb>                       Tds;
-typedef CGAL::Delaunay_triangulation_2<Kernel, Tds>                    Delaunay;
-typedef Kernel::Point_2                                                Point;
-
-typedef CGAL::Constrained_triangulation_face_base_2<Kernel>              Fb;
-typedef CGAL::Triangulation_data_structure_2<Vb,Fb>                 TDS;
-typedef CGAL::Exact_predicates_tag                                  Itag;
-typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, Itag>    CDT;
-typedef CGAL::Spatial_sort_traits_adapter_2<Kernel,Point*> Search_traits;
+// typedef CGAL::Exact_predicates_inexact_constructions_kernel            Kernel;
+// typedef CGAL::Triangulation_vertex_base_with_info_2<unsigned int, Kernel> Vb;
+// typedef CGAL::Triangulation_data_structure_2<Vb>                       Tds;
+// typedef CGAL::Delaunay_triangulation_2<Kernel, Tds>                    Delaunay;
+// typedef Kernel::Point_2                                                Point;
+//
+// typedef CGAL::Constrained_triangulation_face_base_2<Kernel>              Fb;
+// typedef CGAL::Triangulation_data_structure_2<Vb,Fb>                 TDS;
+// typedef CGAL::Exact_predicates_tag                                  Itag;
+// typedef CGAL::Constrained_Delaunay_triangulation_2<Kernel, TDS, Itag>    CDT;
+// typedef CGAL::Spatial_sort_traits_adapter_2<Kernel,Point*> Search_traits;
 
 using namespace std;
 
