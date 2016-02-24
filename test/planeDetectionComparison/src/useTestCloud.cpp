@@ -31,6 +31,7 @@
 #include <planeDetectionComparison/planeSegmentationPCL.h>
 #include <planeDetectionComparison/planeSegmentationPPR.h>
 #include <planeDetectionComparison/planeSegmentationEfficient.h>
+#include <planeDetectionComparison/cgalTriangulationPlus.h>
 #include <planeDetectionComparison/cgalTriangulation.h>
 #include <planeDetectionComparison/utils.h>
 #include <Refinement/SurfaceRefinement.h>
@@ -161,6 +162,7 @@ public:
             std::vector<Point> plane_2d;
             std::vector<Point> boundary_2d;
 
+            // *super_planes[i] += *simplified_hulls[i];
             pclPlaneToCGAL<pcl::PointXYZRGB>(super_planes[i], simplified_hulls[i], normal_vec[i], plane_2d, boundary_2d);
             std::vector<std::vector<unsigned int> > idx;
             constrainedDelaunayTriangulation(plane_2d, boundary_2d, idx);
@@ -198,11 +200,11 @@ public:
             vert.vertices.resize(3);
             int super_size = super_planes[i]->points.size();
             for(auto poly : idx){
-                if(poly[0] >= super_size && poly[1] >= super_size && poly[2] >= super_size){
-                    std::cout << "super: " << super_size << ", ";
-                    std::cout << poly[0] << ", " << poly[1] << ", " << poly[2] << std::endl;
-                    continue;
-                }
+                // if(poly[0] >= super_size && poly[1] >= super_size && poly[2] >= super_size){
+                //     std::cout << "super: " << super_size << ", ";
+                //     std::cout << poly[0] << ", " << poly[1] << ", " << poly[2] << std::endl;
+                //     continue;
+                // }
                 vert.vertices[0] = poly[0]+s;
                 vert.vertices[1] = poly[1]+s;
                 vert.vertices[2] = poly[2]+s;
