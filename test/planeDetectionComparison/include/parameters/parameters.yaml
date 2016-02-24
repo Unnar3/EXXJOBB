@@ -14,11 +14,11 @@ path_test               : /home/unnar/catkin_ws/src/EXXJOBB/test/planeDetectionC
 # Compression class params
 VoxelLeafSize           : 0.01, # Cannot be smaller than SVVoxelResolution
 SVVoxelResolution       : 0.02,
-SVSeedResolution        : 0.2,
+SVSeedResolution        : 0.3,
 SVColorImportance       : 0.1,
-SVSpatialImportance     : 5.0,
-RWHullMaxDist           : 0.05,
-hullAlpha               : 0.1,
+SVSpatialImportance     : 8.0,
+RWHullMaxDist           : 0.02,
+hullAlpha               : 0.08,
 
 # Strand ransac params
 disjoinedSet            : 10,
