@@ -152,12 +152,42 @@ public:
         // cmprs.cornerMatching(plane_vec, simplified_hulls, normal_vec);
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
 
+
+        // REMOVE SUPER VOXELS TO CLOSE TO BOUNDARY.
+        pcl::KdTreeFLANN<PointT> kdtree;
+        for (size_t i = 0; i < plane_vec.size(); i++) {
+
+            kdtree.setInputCloud (hulls[i]);
+            std::vector<int> pointIdxRadiusSearch;
+            std::vector<float> pointRadiusSquaredDistance;
+            pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
+
+            float radius = 0.05;
+            for (size_t j = 0; j < super_planes[i]->points.size(); j++) {
+                if ( kdtree.radiusSearch (super_planes[i]->points[j], radius, pointIdxRadiusSearch, pointRadiusSquaredDistance) > 0 ){
+                    inliers->indices.push_back(j);
+                }
+            }
+            if(inliers->indices.size() > 0){
+                // Create the filtering object
+                pcl::PointCloud<PointT>::Ptr tmp_cloud (new pcl::PointCloud<PointT>());
+                pcl::ExtractIndices<PointT> extract;
+                extract.setInputCloud (super_planes[i]);
+                extract.setIndices (inliers);
+                extract.setNegative (true);
+                extract.filter (*tmp_cloud);
+                super_planes[i].swap(tmp_cloud);
+            }
+        }
+
+        /////////////////////////////////////////////////
+
         int s = 0;
         PointCloudT::Ptr combined (new PointCloudT());
         // pcl::PolygonMesh mesh;
         std::vector<pcl::Vertices> vertices;
         // for (size_t i = 0; i < plane_vec.size(); i++) {
-        for (size_t i = 2; i < 3; i++) {
+        for (size_t i = 0; i < 3; i++) {
 
             std::vector<Point> plane_2d;
             std::vector<Point> boundary_2d;
@@ -167,13 +197,7 @@ public:
             std::vector<std::vector<unsigned int> > idx;
             constrainedDelaunayTriangulation(plane_2d, boundary_2d, idx);
 
-            // for(auto IDX : idx){
-            //     for(auto vert : IDX){
-            //         if(vert <= 0 || vert >= super_planes[i]->points.size() + simplified_hulls[i]->points.size()){
-            //             std::cout << "hmm " << vert << std::endl;
-            //         }
-            //     }
-            // }
+            std::cout << "i: " << i << " size: " << idx.size() << std::endl;
 
 
             int red, green, blue;
@@ -212,7 +236,7 @@ public:
                 // std::cout << poly[0] << ", " << poly[1] << ", " << poly[2] << std::endl;
                 // std::cout << "-----------------------" << std::endl;
             }
-            s = s + super_planes[i]->points.size() + hulls[i]->points.size();
+            s = combined->points.size();
 
         }
 
@@ -225,15 +249,15 @@ public:
         // planeDetection::toMeshCloud(*combined, mesh.cloud);
         // mesh.polygons = vertices;
 
-        // pcl::visualization::PCLVisualizer::Ptr viewer;
-        // // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-        // viewer.reset(new pcl::visualization::PCLVisualizer);
-        // // viewer->setBackgroundColor (0, 0, 0);
-        // viewer.reset(new PCLVisualizer);
-        // viewer->addPolygonMesh<PointT>(combined, vertices);
-        // // viewer->setShapeRenderingProperties(PCL_VISUALIZER_SHADING, PCL_VISUALIZER_SHADING_PHONG, "polygon");
-        // // viewer->setPointCloudRenderingProperties(PCL_VISUALIZER_SHADING, PCL_VISUALIZER_SHADING_GOURAUD, "polygon");
-        // viewer->spin();
+        pcl::visualization::PCLVisualizer::Ptr viewer;
+        // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+        viewer.reset(new pcl::visualization::PCLVisualizer);
+        // viewer->setBackgroundColor (0, 0, 0);
+        viewer.reset(new PCLVisualizer);
+        viewer->addPolygonMesh<PointT>(combined, vertices);
+        // viewer->setShapeRenderingProperties(PCL_VISUALIZER_SHADING, PCL_VISUALIZER_SHADING_PHONG, "polygon");
+        // viewer->setPointCloudRenderingProperties(PCL_VISUALIZER_SHADING, PCL_VISUALIZER_SHADING_GOURAUD, "polygon");
+        viewer->spin();
         // pcl::io::savePLYFile (path + "meshlab.ply", mesh);
 
     }

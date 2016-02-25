@@ -235,7 +235,7 @@ bool check_winding(std::vector<Point> &points, std::vector<unsigned int> idx, st
     }
 
     // Check if sufficient number of boundary points.
-    if( count < 2 ) return true;
+    if( count < 3 ) return true;
 
     std::sort(idx.begin(), idx.end());
     Eigen::Vector3f a;
@@ -247,7 +247,7 @@ bool check_winding(std::vector<Point> &points, std::vector<unsigned int> idx, st
     b[1] = points[idx[2]][1] - points[idx[0]][1];
     b[2] = 0;
 
-    bool order = (a.cross(b))[2] >= 0;;
+    bool order = (a.cross(b))[2] <= 0;
 
     return external == order;
 
@@ -277,6 +277,7 @@ void constrainedDelaunayTriangulation(  std::vector<Point>                      
     int k = 0;
     int startP = 0;
     breaks.push_back(startP);
+    breaks.push_back(points_size);
     for (size_t i = 0; i < constraines.size()-1; i++) {
         if(dist_func(constraines[i], constraines[i+1])){
             if(i == startP){
