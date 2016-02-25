@@ -104,7 +104,8 @@ void testApplication::updateScene(PointCloudT::Ptr nonPlanar, std::vector<PointC
 
     for (size_t i = 0; i < planes[0]->points.size(); i++){
         std::cout << planes[0]->points[i].x << ", " << -planes[0]->points[i].y << ", " << -planes[0]->points[i].z << std::endl;
-        manual->position(planes[0]->points[i].x, -planes[0]->points[i].y, -planes[0]->points[i].z);
+        // manual->position(planes[0]->points[i].x, -planes[0]->points[i].y, -planes[0]->points[i].z);
+        manual->position(planes[0]->points[i].x, planes[0]->points[i].z, -planes[0]->points[i].y);
         r = (Ogre::Real)planes[0]->points[i].r / (Ogre::Real)255;
         g = (Ogre::Real)planes[0]->points[i].g / (Ogre::Real)255;
         b = (Ogre::Real)planes[0]->points[i].b / (Ogre::Real)255;

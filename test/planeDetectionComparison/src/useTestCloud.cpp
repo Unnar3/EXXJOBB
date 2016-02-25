@@ -187,7 +187,7 @@ public:
         // pcl::PolygonMesh mesh;
         std::vector<pcl::Vertices> vertices;
         // for (size_t i = 0; i < plane_vec.size(); i++) {
-        for (size_t i = 0; i < 3; i++) {
+        for (size_t i = 4; i < 7; i++) {
 
             std::vector<Point> plane_2d;
             std::vector<Point> boundary_2d;
@@ -224,19 +224,13 @@ public:
             vert.vertices.resize(3);
             int super_size = super_planes[i]->points.size();
             for(auto poly : idx){
-                // if(poly[0] >= super_size && poly[1] >= super_size && poly[2] >= super_size){
-                //     std::cout << "super: " << super_size << ", ";
-                //     std::cout << poly[0] << ", " << poly[1] << ", " << poly[2] << std::endl;
-                //     continue;
-                // }
                 vert.vertices[0] = poly[0]+s;
                 vert.vertices[1] = poly[1]+s;
                 vert.vertices[2] = poly[2]+s;
                 vertices.push_back(vert);
-                // std::cout << poly[0] << ", " << poly[1] << ", " << poly[2] << std::endl;
-                // std::cout << "-----------------------" << std::endl;
             }
             s = combined->points.size();
+            if (s > 0) break;
 
         }
 
@@ -249,16 +243,16 @@ public:
         // planeDetection::toMeshCloud(*combined, mesh.cloud);
         // mesh.polygons = vertices;
 
-        pcl::visualization::PCLVisualizer::Ptr viewer;
-        // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-        viewer.reset(new pcl::visualization::PCLVisualizer);
-        // viewer->setBackgroundColor (0, 0, 0);
-        viewer.reset(new PCLVisualizer);
-        viewer->addPolygonMesh<PointT>(combined, vertices);
-        // viewer->setShapeRenderingProperties(PCL_VISUALIZER_SHADING, PCL_VISUALIZER_SHADING_PHONG, "polygon");
-        // viewer->setPointCloudRenderingProperties(PCL_VISUALIZER_SHADING, PCL_VISUALIZER_SHADING_GOURAUD, "polygon");
-        viewer->spin();
-        // pcl::io::savePLYFile (path + "meshlab.ply", mesh);
+        // pcl::visualization::PCLVisualizer::Ptr viewer;
+        // // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("3D Viewer"));
+        // viewer.reset(new pcl::visualization::PCLVisualizer);
+        // // viewer->setBackgroundColor (0, 0, 0);
+        // viewer.reset(new PCLVisualizer);
+        // viewer->addPolygonMesh<PointT>(combined, vertices);
+        // // viewer->setShapeRenderingProperties(PCL_VISUALIZER_SHADING, PCL_VISUALIZER_SHADING_PHONG, "polygon");
+        // // viewer->setPointCloudRenderingProperties(PCL_VISUALIZER_SHADING, PCL_VISUALIZER_SHADING_GOURAUD, "polygon");
+        // viewer->spin();
+        // // pcl::io::savePLYFile (path + "meshlab.ply", mesh);
 
     }
 

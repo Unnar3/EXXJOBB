@@ -60,6 +60,30 @@ using SurfelCloudT = pcl::PointCloud<SurfelT>;
 template <class InputIterator>
 void insert_with_info(CDT& cdt, InputIterator first,InputIterator last);
 
+//explore set of facets connected with non constrained edges,
+//and attribute to each such set a nesting level.
+//We start from facets incident to the infinite vertex, with a nesting
+//level of 0. Then we recursively consider the non-explored facets incident
+//to constrained edges bounding the former set and increase the nesting level by 1.
+//Facets in the domain are those with an odd nesting level.
+void mark_domains( CDT& cdt );
+
+
+void mark_domains(  CDT&                   ct,
+                    CDT::Face_handle       start,
+                    int                    index,
+                    std::list<CDT::Edge>&  border );
+
+
+void insert_polygon(    CDT&                cdt,
+                        const Polygon_2&    polygon);
+
+bool check_winding(     std::vector<Point>          &points,
+                        std::vector<unsigned int>   idx,
+                        std::vector<int>            breaks);
+
+float polygon_winding_order( std::vector<Point> &points, int start, int end );
+
 
 void constrainedDelaunayTriangulation(  std::vector<Point>                      points,
                                         std::vector<Point>                      constraines,
@@ -140,6 +164,93 @@ void pclPlaneToCGAL(    typename pcl::PointCloud<T>::Ptr    plane,
 }
 
 
+void constrainedDelaunayTriangulation(  std::vector<Point>                      points,
+                                        std::vector<Point>                      constraines,
+                                        std::vector<std::vector<unsigned int> > &idx){
+
+
+    auto dist_func = [](Point a, Point b){
+        return std::pow(b[0] - a[0], 2) + std::pow(b[1] - a[1], 2) < 0.5;
+    };
+
+    if(points.size() < 3) return;
+    int size = points.size();
+    int points_size = size;
+    for(auto p : constraines){
+        points.push_back(p);
+    }
+
+    Polygon_2 polygon;
+    std::vector<Polygon_2> polygons;
+    polygons.push_back(polygon);
+    std::vector<int> breaks;
+    int k = 0;
+    int startP = 0;
+    breaks.push_back(startP);
+    breaks.push_back(points_size);
+    for (size_t i = 0; i < constraines.size()-1; i++) {
+        if(dist_func(constraines[i], constraines[i+1])){
+            if(i == startP){
+                polygons[k].push_back(constraines[startP]);
+            }
+            polygons[k].push_back(constraines[i+1]);
+        } else {
+            k++;
+            startP = i+1;
+            breaks.push_back(startP + points_size);
+            polygons.push_back(polygon);
+            // break;
+        }
+    }
+
+    std::cout << "size: " << points_size << std::endl;
+    for(auto p: breaks){
+        std::cout << p << ", ";
+    }
+    std::cout << " " << std::endl;
+
+
+    CDT cdt;
+
+
+    // Insert the points.
+    insert_with_info(cdt, points.begin(),points.end());
+
+    int hull_close = 0;
+
+    // make it conforming Delaunay
+    // CGAL::make_conforming_Delaunay_2(cdt);
+
+    // Clear Idx if not empty and reserve approximate size;
+    if(idx.size() != 0) idx.clear();
+    idx.reserve( cdt.number_of_faces() );
+
+
+    // Fill idx with indices.
+    std::vector<unsigned int> poly(3);
+
+    for(CDT::Finite_faces_iterator fit = cdt.finite_faces_begin();
+        fit != cdt.finite_faces_end(); ++fit) {
+
+        // if ( !fit->info().in_domain() ) continue;
+
+        CDT::Face_handle face = fit;
+
+        poly[0] = face->vertex(0)->info();
+        poly[1] = face->vertex(1)->info();
+        poly[2] = face->vertex(2)->info();
+
+        if( check_winding(points, poly, breaks) ){
+            idx.push_back(poly);
+        }
+    }
+    for(auto p : constraines){
+        std::cout << p << std::endl;
+    }
+}
+
+
+
 void
 mark_domains(CDT& ct,
              CDT::Face_handle start,
@@ -211,6 +322,23 @@ void insert_polygon(CDT& cdt,const Polygon_2& polygon){
 }
 
 
+float polygon_winding_order( std::vector<Point> &points, int start, int end ){
+    if( start > end || end > points.size()){
+        std::cerr << "Illeagal inputs for polygon_winding order!!" << std::endl;
+        exit(0);
+    }
+
+    float sum = 0;
+    for (size_t i = start; i < end; i++) {
+        sum +=  (points[i+1][0] - points[i][0]) * (points[i+1][1] + points[i][1]);
+    }
+    sum += (points[start][0] - points[end-1][0]) * (points[start][1] + points[end-1][1]);
+
+    return sum;
+
+}
+
+
 bool check_winding(std::vector<Point> &points, std::vector<unsigned int> idx, std::vector<int> breaks){
     // Start by finding number of points in external alpha shape.
 
@@ -218,6 +346,7 @@ bool check_winding(std::vector<Point> &points, std::vector<unsigned int> idx, st
 
     breaks.push_back(points.size());
     bool external = true;
+    float clockwise = 0;
 
     int count = 0;
     // std::vector<int> count(breaks.size()-1);
@@ -228,7 +357,8 @@ bool check_winding(std::vector<Point> &points, std::vector<unsigned int> idx, st
                 count++;
             }
         }
-        if( count > 1 ){
+        if( count == 3 ){
+            clockwise = polygon_winding_order(points, breaks[i], breaks[i+1]);
             external = i == 1;
             break;
         }
@@ -237,170 +367,46 @@ bool check_winding(std::vector<Point> &points, std::vector<unsigned int> idx, st
     // Check if sufficient number of boundary points.
     if( count < 3 ) return true;
 
+    auto triangle_clockwise = [](Point a, Point b, Point c){
+        float sum = 0;
+        sum +=  (b[0] - a[0]) * (b[1] + a[1]);
+        sum +=  (c[0] - b[0]) * (c[1] + b[1]);
+        sum +=  (a[0] - c[0]) * (a[1] + c[1]);
+        return sum > 0;
+    };
+
     std::sort(idx.begin(), idx.end());
-    Eigen::Vector3f a;
-    a[0] = points[idx[1]][0] - points[idx[0]][0];
-    a[1] = points[idx[1]][1] - points[idx[0]][1];
-    a[2] = 0;
-    Eigen::Vector3f b;
-    b[0] = points[idx[2]][0] - points[idx[0]][0];
-    b[1] = points[idx[2]][1] - points[idx[0]][1];
-    b[2] = 0;
+    // Eigen::Vector3f a;
+    // Eigen::Vector3f b;
+    // a[0] = points[idx[1]][0] - points[idx[0]][0];
+    // a[1] = points[idx[1]][1] - points[idx[0]][1];
+    // b[0] = points[idx[2]][0] - points[idx[0]][0];
+    // b[1] = points[idx[2]][1] - points[idx[0]][1];
+    // b[2] = 0;
+    //
+    // bool order = (a.cross(b))[2] <= 0;
 
-    bool order = (a.cross(b))[2] <= 0;
+    bool order = triangle_clockwise(points[idx[0]], points[idx[1]], points[idx[2]]);
 
-    return external == order;
+    bool out = ((clockwise > 0) == order) == external;
+    if(!out){
+
+        std::cout << "-------------" << std::endl;
+        std::cout << points[idx[0]] << ", " << points[idx[1]] << ", " << points[idx[2]] << std::endl;
+        std::cout << idx[0] << ", " << idx[1] << ", " << idx[2] << std::endl;
+        std::cout << "breaks: " << std::endl;
+        std::cout << "clockwise: " << clockwise << std::endl;
+        for(auto i : breaks){
+            std::cout << i << ",";
+        }
+        std::cout << " " << std::endl;
+
+        std::cout << "E: " << external << "  C: " << clockwise << "  P: " << order << "   Out: " << out << std::endl;
+    }
+
+    return (clockwise == order) == external;
 
 }
-
-
-void constrainedDelaunayTriangulation(  std::vector<Point>                      points,
-                                        std::vector<Point>                      constraines,
-                                        std::vector<std::vector<unsigned int> > &idx){
-
-
-    auto dist_func = [](Point a, Point b){
-        return std::pow(b[0] - a[0], 2) + std::pow(b[1] - a[1], 2) < 0.5;
-    };
-
-    if(points.size() < 3) return;
-    int size = points.size();
-    int points_size = size;
-    for(auto p : constraines){
-        points.push_back(p);
-    }
-
-    Polygon_2 polygon;
-    std::vector<Polygon_2> polygons;
-    polygons.push_back(polygon);
-    std::vector<int> breaks;
-    int k = 0;
-    int startP = 0;
-    breaks.push_back(startP);
-    breaks.push_back(points_size);
-    for (size_t i = 0; i < constraines.size()-1; i++) {
-        if(dist_func(constraines[i], constraines[i+1])){
-            if(i == startP){
-                polygons[k].push_back(constraines[startP]);
-            }
-            polygons[k].push_back(constraines[i+1]);
-        } else {
-            k++;
-            startP = i+1;
-            breaks.push_back(startP + points_size);
-            polygons.push_back(polygon);
-            // break;
-        }
-    }
-
-    std::cout << "size: " << points_size << std::endl;
-    for(auto p: breaks){
-        std::cout << p << ", ";
-    }
-    std::cout << " " << std::endl;
-
-
-    CDT cdt;
-
-
-    // Insert the points.
-    insert_with_info(cdt, points.begin(),points.end());
-    // if(constraines.size() > 1){
-    //     // for(auto pol : polygons){
-    //     //     if(pol.size() > 5){
-    //     //         insert_polygon(cdt, pol);
-    //     //     }
-    //     // }
-    //     //Mark facets that are inside the domain bounded by the polygon
-    //     insert_polygon(cdt, polygons[0]);
-    //     mark_domains(cdt);
-    //
-    //
-    //     // put the correct index on the constraine points.
-    //     auto it = cdt.vertices_begin();
-    //     std::advance(it, size);
-    //     for(; it != cdt.vertices_end(); ++it){
-    //         it->info() = size;
-    //         // std::cout << size << std::endl;
-    //         size++;
-    //     }
-    // }
-    // Insert the constraints (boundary).
-    int hull_close = 0;
-    // if(constraines.size() > 1){
-    //     // for(auto pol : polygons){
-    //     //     if(pol.size() > 5){
-    //     //         insert_polygon(cdt, pol);
-    //     //     }
-    //     // }
-    //     //Mark facets that are inside the domain bounded by the polygon
-    //     insert_polygon(cdt, polygons[0]);
-    //     mark_domains(cdt);
-    //
-    //
-    //     // put the correct index on the constraine points.
-    //     auto it = cdt.vertices_begin();
-    //     std::advance(it, size);
-    //     for(; it != cdt.vertices_end(); ++it){
-    //         it->info() = size;
-    //         // std::cout << size << std::endl;
-    //         size++;
-    //     }
-    // }
-
-    // make it conforming Delaunay
-    // CGAL::make_conforming_Delaunay_2(cdt);
-
-    // Clear Idx if not empty and reserve approximate size;
-    if(idx.size() != 0) idx.clear();
-    idx.reserve( cdt.number_of_faces() );
-
-
-    // Fill idx with indices.
-    std::vector<unsigned int> poly(3);
-
-    auto check_boundary = [points_size](std::vector<unsigned int> vec){
-        int k = 0;
-        std::vector<unsigned int> v;
-        for(auto point : vec){
-            if( point >= points_size ) k++;
-            // if( point >= points_size ) v.push_back(point);
-        }
-        // if(v.size() > 1){
-        //     for (size_t i = 0; i < v.size()-1; i++) {
-        //         if(std::abs(v[i] - v[i+1]) > 3 )
-        //             return false;
-        //     }
-        // }
-
-        return k != 3;
-    };
-
-    // auto func_closness = [points_size](std::vector<unsigned int> vec){
-    //     return std::count_if(vec.begin(), vec.end(), [points_size](auto idx){
-    //         if( idx >= points_size ) return true;
-    //     });
-    // };
-
-    for(CDT::Finite_faces_iterator fit = cdt.finite_faces_begin();
-        fit != cdt.finite_faces_end(); ++fit) {
-
-        // if ( !fit->info().in_domain() ) continue;
-
-        CDT::Face_handle face = fit;
-
-        poly[0] = face->vertex(0)->info();
-        poly[1] = face->vertex(1)->info();
-        poly[2] = face->vertex(2)->info();
-
-
-        // if( check_boundary(poly) ){
-        if( check_winding(points, poly, breaks) ){
-            idx.push_back(poly);
-        }
-    }
-}
-
 
 
 template <class InputIterator>
