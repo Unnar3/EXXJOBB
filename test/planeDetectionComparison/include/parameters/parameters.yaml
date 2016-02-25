@@ -18,7 +18,7 @@ SVSeedResolution        : 0.2,
 SVColorImportance       : 0.1,
 SVSpatialImportance     : 8.0,
 RWHullMaxDist           : 0.01,
-hullAlpha               : 0.06,
+hullAlpha               : 0.08,
 
 # Strand ransac params
 disjoinedSet            : 10,
