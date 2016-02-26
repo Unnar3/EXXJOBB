@@ -2,6 +2,7 @@
 #include <pcl_ros/transforms.h>
 #include <exx_compression/compression.h>
 #include <exx_compression/planes.h>
+#include <reconstruction/reconstruction.h>
 // #include <utils/utils.h>
 #include <dbscan/dbscan.h>
 #include <utils/utils.cpp>
@@ -31,7 +32,6 @@
 #include <planeDetectionComparison/planeSegmentationPCL.h>
 #include <planeDetectionComparison/planeSegmentationPPR.h>
 #include <planeDetectionComparison/planeSegmentationEfficient.h>
-#include <planeDetectionComparison/cgalTriangulationPlus.h>
 #include <planeDetectionComparison/cgalTriangulation.h>
 #include <planeDetectionComparison/utils.h>
 #include <Refinement/SurfaceRefinement.h>
@@ -76,6 +76,7 @@ public:
 private:
     ros::Publisher point_cloud_publisher;
     EXX::compression cmprs;
+    // EXX::reconstruction recr;
     primitive_params params;
 
 public:
@@ -203,13 +204,17 @@ public:
             std::vector<Point> plane_2d;
             std::vector<Point> boundary_2d;
             bool log = false;
-
+            std::cout << "hmm1" << std::endl;
+            // EXX::reconstruction recr;
+            std::cout << "hmm2" << std::endl;
             pclPlaneToCGAL<pcl::PointXYZRGB>(super_planes[i], simplified_hulls[i], normal_vec[i], plane_2d, boundary_2d);
+            // recr.pclPlaneToCGAL<pcl::PointXYZRGB>(super_planes[i], simplified_hulls[i], normal_vec[i], plane_2d, boundary_2d);
             std::vector<std::vector<unsigned int> > idx;
             if (i == 3) {
                 log = true;
             }
             constrainedDelaunayTriangulation(plane_2d, boundary_2d, idx, log);
+            // recr.constrainedDelaunayTriangulation(plane_2d, boundary_2d, idx, log);
 
             int red, green, blue;
             generateRandomColor(133,133,133, red, green, blue);

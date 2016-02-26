@@ -10,7 +10,10 @@ find_package(catkin REQUIRED COMPONENTS
   	sensor_msgs
   	std_msgs
   	message_generation
+    qt_build
 )
+
+rosbuild_prepare_qt4(QtCore QtXml)
 
 add_message_files(FILES
 	planes.msg
@@ -22,13 +25,20 @@ generate_messages(DEPENDENCIES
 	sensor_msgs
 )
 
+
+find_package(CGAL REQUIRED COMPONENTS Core)
+
 catkin_package(
 	DEPENDS
-	CATKIN_DEPENDS roscpp message_runtime
+	CATKIN_DEPENDS roscpp message_runtime qt_build
 	INCLUDE_DIRS include
-	LIBRARIES compression
+	LIBRARIES compression reconstruction
 )
-include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${CGAL_INCLUDE_DIRS})
+include(${CGAL_USE_FILE})
+
 add_library(compression src/compression.cpp)
+add_library(reconstruction src/reconstruction.cpp)
 add_library(utils include/utils/utils.cpp)
 target_link_libraries(compression utils ${catkin_LIBRARIES} libvtkCommon.so libvtkFiltering.so libvtkGraphics.so)
+target_link_libraries(reconstruction ${catkin_LIBRARIES} ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
