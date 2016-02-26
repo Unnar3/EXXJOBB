@@ -46,8 +46,8 @@ target_link_libraries(comparison ${catkin_LIBRARIES} ${QT_LIBRARIES} compression
 add_executable(createTestCloud src/createTestCloud.cpp)
 target_link_libraries(createTestCloud ${catkin_LIBRARIES})
 
-add_executable(CGALtest src/CGALtest.cpp)
-target_link_libraries(CGALtest ${catkin_LIBRARIES} ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
+#add_executable(CGALtest src/CGALtest.cpp)
+#target_link_libraries(CGALtest ${catkin_LIBRARIES} ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
 
 add_executable(useTestCloud src/useTestCloud.cpp)
 target_link_libraries(useTestCloud ${catkin_LIBRARIES} ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})

@@ -149,7 +149,18 @@ public:
         cmprs.planeToConcaveHull(&plane_vec, &hulls);
         cmprs.getPlaneDensity( plane_vec, hulls, dDesc);
         cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
-        // cmprs.cornerMatching(plane_vec, simplified_hulls, normal_vec);
+
+        std::vector<Eigen::Vector4d> normal_vec_new(normal_vec.size());
+        for (size_t i = 0; i < normal_vec.size(); i++) {
+            for (size_t j = 0; j < normal_vec[i]->values.size(); j++) {
+                normal_vec_new[i][0] = normal_vec[i]->values[0];
+                normal_vec_new[i][1] = normal_vec[i]->values[1];
+                normal_vec_new[i][2] = normal_vec[i]->values[2];
+                normal_vec_new[i][3] = normal_vec[i]->values[3];
+            }
+        }
+
+        // cmprs.cornerMatching(plane_vec, simplified_hulls, normal_vec_new);
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
 
 
@@ -186,19 +197,19 @@ public:
         PointCloudT::Ptr combined (new PointCloudT());
         // pcl::PolygonMesh mesh;
         std::vector<pcl::Vertices> vertices;
-        // for (size_t i = 0; i < plane_vec.size(); i++) {
-        for (size_t i = 4; i < 7; i++) {
+        for (size_t i = 0; i < plane_vec.size(); i++) {
+        // for (size_t i = 3; i < 4; i++) {
 
             std::vector<Point> plane_2d;
             std::vector<Point> boundary_2d;
+            bool log = false;
 
-            // *super_planes[i] += *simplified_hulls[i];
             pclPlaneToCGAL<pcl::PointXYZRGB>(super_planes[i], simplified_hulls[i], normal_vec[i], plane_2d, boundary_2d);
             std::vector<std::vector<unsigned int> > idx;
-            constrainedDelaunayTriangulation(plane_2d, boundary_2d, idx);
-
-            std::cout << "i: " << i << " size: " << idx.size() << std::endl;
-
+            if (i == 3) {
+                log = true;
+            }
+            constrainedDelaunayTriangulation(plane_2d, boundary_2d, idx, log);
 
             int red, green, blue;
             generateRandomColor(133,133,133, red, green, blue);
@@ -230,7 +241,6 @@ public:
                 vertices.push_back(vert);
             }
             s = combined->points.size();
-            if (s > 0) break;
 
         }
 
