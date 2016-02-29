@@ -82,8 +82,10 @@ namespace planeDetection{
             extract.filter (*cloud_tmp);
             (*cloud).swap (*cloud_tmp);
 
+            planes.push_back(plane);
+
             std::vector<pcl::PointIndices> cluster_indices;
-            ecClustering<PointT>(plane, 0.1, 400, 1000000, planes, cluster_indices);
+            ecClustering<PointT>(plane, 0.1, 200, 1000000, planes, cluster_indices);
 
             std::cout << "planes size: " << planes.size() << std::endl;
             *planet = *plane;
@@ -101,6 +103,89 @@ namespace planeDetection{
             *cloud += *cloud_tmpt;
 
         }
+
+        template <typename T>
+        void extractIndicesAndRemoveFromOriginal(typename pcl::PointCloud<T>::Ptr cloud,
+                        typename pcl::PointCloud<T>::Ptr extracted,
+                        pcl::PointIndices::Ptr inliers){
+
+            typename pcl::ExtractIndices<T> extract;
+            extract.setInputCloud (cloud);
+            extract.setIndices (inliers);
+            extract.setNegative (false);
+            extract.filter (*extracted);
+
+            typename pcl::PointCloud<T>::Ptr tmp (new pcl::PointCloud<T>());
+            // Remove the planar inliers, extract the rest
+            extract.setNegative (true);
+            extract.filter (*tmp);
+            (*cloud).swap (*tmp);
+        }
+
+        template <typename T>
+        void extractIndicesFromOriginal(    typename pcl::PointCloud<T>::Ptr cloud,
+                                            typename pcl::PointCloud<T>::Ptr extracted,
+                                            pcl::PointIndices::Ptr inliers){
+
+            typename pcl::ExtractIndices<T> extract;
+            extract.setInputCloud (cloud);
+            extract.setIndices (inliers);
+            extract.setNegative (false);
+            extract.filter (*extracted);
+        }
+
+
+        void extractIndices(PointCloudT::Ptr        cloud,
+                            PointCloudN::Ptr        normals,
+                            PointCloudT::Ptr        plane,
+                            pcl::PointIndices::Ptr  inliers){
+
+                extractIndicesAndRemoveFromOriginal<PointT>(cloud, plane, inliers);
+                PointCloudN::Ptr normals_plane (new PointCloudN());
+                extractIndicesAndRemoveFromOriginal<PointN>(normals, normals_plane, inliers);
+
+                std::vector<PointCloudT::Ptr> planes;
+
+                std::vector<pcl::PointIndices> cluster_indices;
+                ecClustering<PointT>(plane, 0.1, 0, 1000000, planes, cluster_indices);
+
+                if(planes.size() > 1){
+                    std::cout << "ecClustering" << std::endl;
+                    auto result = std::max_element(planes.begin(), planes.end(),
+                        [](PointCloudT::Ptr a,PointCloudT::Ptr b){
+                            return a->points.size() < b->points.size();
+                        }
+                    );
+                    int ind = std::distance(planes.begin(), result);
+                    // *planet = *plane;
+
+                    for (size_t i = 0; i < planes.size(); i++) {
+                        if(i == ind){
+                            *plane = *planes[i];
+                        } else {
+                            *cloud += *planes[i];
+                            PointCloudN::Ptr normals_tmp (new PointCloudN());
+                            pcl::PointIndices::Ptr inliers_tmp (new pcl::PointIndices());
+                            inliers_tmp->indices = cluster_indices[i].indices;
+                            extractIndicesFromOriginal<PointN>(normals_plane, normals_tmp, inliers_tmp);
+                            *normals += *normals_tmp;
+                        }
+                    }
+
+
+                    // pcl::PointIndices::Ptr tmp (new pcl::PointIndices());
+                    // tmp->indices.reserve(cluster_indices[ind].indices.size());
+                    // for(auto p : cluster_indices[ind].indices){
+                    //     tmp->indices.push_back(p);
+                    // }
+                    // extract.setInputCloud (planet);
+                    // extract.setIndices (tmp);
+                    // extract.setNegative (true);
+                    // extract.filter (*cloud_tmpt);
+                    // *cloud += *cloud_tmpt;
+                }
+
+            }
 
 
         template<typename PointT> void

@@ -40,8 +40,6 @@
 #include <pcl/console/parse.h>
 #include <Eigen/Dense>
 #include <algorithm>
-#include <complex>
-#include <vector>
 #include <stdlib.h>
 #include <time.h>
 #include <sstream>
@@ -76,7 +74,7 @@ public:
 private:
     ros::Publisher point_cloud_publisher;
     EXX::compression cmprs;
-    // EXX::reconstruction recr;
+    EXX::reconstruction recr;
     primitive_params params;
 
 public:
@@ -127,13 +125,15 @@ public:
 
         std::vector<PointCloudT::Ptr> plane_vec;
         std::vector<pcl::ModelCoefficients::Ptr> normal_vec;
+        // std::vector<Eigen::Vector4d> normal_vec;
         PointCloudT::Ptr nonPlanar (new PointCloudT());
 
         std::cout << "Efficient PPR..................." << std::endl;
-        planeDetection::planeSegmentationEfficientPPR(segment, params, plane_vec, normal_vec, nonPlanar);
-        for (size_t i = 0; i < 2; i++) {
-            std::cout << "size: " << plane_vec[i]->points.size() << std::endl;
-        }
+        // planeDetection::planeSegmentationEfficientPPR(segment, params, plane_vec, normal_vec, nonPlanar);
+        planeSegmentationNILS(segment, plane_vec, normal_vec, nonPlanar);
+
+        std::cout << "plane_vec: " << plane_vec.size() << std::endl;
+        std::cout << "normal_vec: " << normal_vec.size() << std::endl;
 
         // PROJECT TO PLANE
         for ( size_t i = 0; i < normal_vec.size(); ++i ){
@@ -151,15 +151,15 @@ public:
         cmprs.getPlaneDensity( plane_vec, hulls, dDesc);
         cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
 
-        std::vector<Eigen::Vector4d> normal_vec_new(normal_vec.size());
-        for (size_t i = 0; i < normal_vec.size(); i++) {
-            for (size_t j = 0; j < normal_vec[i]->values.size(); j++) {
-                normal_vec_new[i][0] = normal_vec[i]->values[0];
-                normal_vec_new[i][1] = normal_vec[i]->values[1];
-                normal_vec_new[i][2] = normal_vec[i]->values[2];
-                normal_vec_new[i][3] = normal_vec[i]->values[3];
-            }
-        }
+        // std::vector<Eigen::Vector4d> normal_vec_new(normal_vec.size());
+        // for (size_t i = 0; i < normal_vec.size(); i++) {
+        //     for (size_t j = 0; j < normal_vec[i]->values.size(); j++) {
+        //         normal_vec_new[i][0] = normal_vec[i]->values[0];
+        //         normal_vec_new[i][1] = normal_vec[i]->values[1];
+        //         normal_vec_new[i][2] = normal_vec[i]->values[2];
+        //         normal_vec_new[i][3] = normal_vec[i]->values[3];
+        //     }
+        // }
 
         // cmprs.cornerMatching(plane_vec, simplified_hulls, normal_vec_new);
         cmprs.superVoxelClustering(&plane_vec, &super_planes, dDesc);
@@ -197,6 +197,18 @@ public:
         int s = 0;
         PointCloudT::Ptr combined (new PointCloudT());
         // pcl::PolygonMesh mesh;
+
+        // for (size_t i = 0; i < plane_vec.size(); i++) {
+        //     int red, green, blue;
+        //     generateRandomColor(133,133,133, red, green, blue);
+        //     for(auto &p : plane_vec[i]->points ){
+        //         p.r = red;
+        //         p.g = green;
+        //         p.b = blue;
+        //     }
+        //     *combined += *plane_vec[i];
+        // }
+
         std::vector<pcl::Vertices> vertices;
         for (size_t i = 0; i < plane_vec.size(); i++) {
         // for (size_t i = 3; i < 4; i++) {
@@ -204,17 +216,14 @@ public:
             std::vector<Point> plane_2d;
             std::vector<Point> boundary_2d;
             bool log = false;
-            std::cout << "hmm1" << std::endl;
-            // EXX::reconstruction recr;
-            std::cout << "hmm2" << std::endl;
-            pclPlaneToCGAL<pcl::PointXYZRGB>(super_planes[i], simplified_hulls[i], normal_vec[i], plane_2d, boundary_2d);
-            // recr.pclPlaneToCGAL<pcl::PointXYZRGB>(super_planes[i], simplified_hulls[i], normal_vec[i], plane_2d, boundary_2d);
+            // pclPlaneToCGAL<pcl::PointXYZRGB>(super_planes[i], simplified_hulls[i], normal_vec[i], plane_2d, boundary_2d);
+            recr.pclPlaneToCGAL<pcl::PointXYZRGB>(super_planes[i], simplified_hulls[i], normal_vec[i], plane_2d, boundary_2d);
             std::vector<std::vector<unsigned int> > idx;
             if (i == 3) {
                 log = true;
             }
-            constrainedDelaunayTriangulation(plane_2d, boundary_2d, idx, log);
-            // recr.constrainedDelaunayTriangulation(plane_2d, boundary_2d, idx, log);
+            // constrainedDelaunayTriangulation(plane_2d, boundary_2d, idx, log);
+            recr.constrainedDelaunayTriangulation(plane_2d, boundary_2d, idx, log);
 
             int red, green, blue;
             generateRandomColor(133,133,133, red, green, blue);
@@ -246,13 +255,14 @@ public:
                 vertices.push_back(vert);
             }
             s = combined->points.size();
-
+        
         }
 
         cloudPublish(combined, vertices);
 
         pcl::PCDWriter writer;
         // writer.write(path + "outCloudEfficientPPR.pcd", *outCloudEfficientPPR);
+        *combined += *nonPlanar;
         writer.write(path + "outCloudEfficientPPR.pcd", *combined);
 
         // planeDetection::toMeshCloud(*combined, mesh.cloud);
@@ -278,22 +288,28 @@ private:
 
 
     void planeSegmentationNILS( const PointCloudT::Ptr cloud_in,
-                            const NormalCloudT::Ptr normals,
                             std::vector<PointCloudT::Ptr> &plane_vec,
-                            std::vector<Eigen::Vector4d> &normal_vec,
+                            std::vector<pcl::ModelCoefficients::Ptr> &normal_vec,
+                            // std::vector<Eigen::Vector4d> normal_vec,
                             PointCloudT::Ptr nonPlanar){
         // Perform the compression
         // RANSAC
+
+
+
+
         std::vector<base_primitive*> primitives = { new plane_primitive() };
-        primitive_extractor<PointT> extractor(cloud_in, normals, primitives, params, NULL);
+        primitive_extractor<PointT> extractor(cloud_in, primitives, params, NULL);
         std::vector<base_primitive*> extracted;
         extractor.extract(extracted);
-
 
         std::vector<int> ind;
         pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
         pcl::ExtractIndices<PointT> extract;
         Eigen::VectorXd data;
+        Eigen::Vector4d tmpnorm;
+        pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients());
+        coeff->values.resize(4);
         for (size_t j = 0; j < extracted.size(); ++j){
             ind = extracted[j]->supporting_inds;
 
@@ -303,7 +319,12 @@ private:
             inliers->indices.insert(inliers->indices.end(), ind.begin(), ind.end());
 
             extracted.at(j)->shape_data(data);
-            normal_vec.push_back(data.segment<4>(0));
+            tmpnorm = data.segment<4>(0);
+            coeff->values[0] = tmpnorm[0];
+            coeff->values[1] = tmpnorm[1];
+            coeff->values[2] = tmpnorm[2];
+            coeff->values[3] = tmpnorm[3];
+            normal_vec.push_back(coeff);
             PointCloudT::Ptr test_cloud (new PointCloudT ());
             for (size_t i = 0; i < ind.size(); ++i){
                 test_cloud->points.push_back(cloud_in->points[ind[i]]);

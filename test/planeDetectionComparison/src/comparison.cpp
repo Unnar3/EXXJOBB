@@ -101,67 +101,67 @@ public:
     }
 
     void testComparison(void){
-        std::string path = loadParam<std::string>("path", nh);
+        std::string path = loadParam<std::string>("path_test", nh);
 
-        SurfelCloudT::Ptr surfel_cloud (new SurfelCloudT());
+        // SurfelCloudT::Ptr surfel_cloud (new SurfelCloudT());
         PointCloudT::Ptr segment (new PointCloudT());
         NormalCloudT::Ptr normals (new NormalCloudT());
 
         pcl::PCDReader reader;
-        reader.read (path + "surfel_map.pcd", *surfel_cloud);
-        reader.read (path + "complete_cloud.pcd", *segment);
+        reader.read (path + "testCloud_complete.pcd", *segment);
 
-        std::cout << "surfel: " << surfel_cloud->points.size() << std::endl;
         std::cout << "segment: " << segment->points.size() << std::endl;
 
-        auto sweep = SimpleXMLParser<PointT>::loadRoomFromXML(path + "room.xml");
-        tf::StampedTransform rotationTF = sweep.vIntermediateRoomCloudTransforms.front();
-        Eigen::Affine3d trans;
-        tf::transformTFToEigen(rotationTF, trans);
 
-        pcl::transformPointCloud (*segment, *segment, trans);
-        pcl::transformPointCloudWithNormals (*surfel_cloud, *surfel_cloud, trans);
-        normals = compute_surfel_normals(surfel_cloud, segment);
+        // std::vector<PointCloudT::Ptr> plane_vec;
+        // std::vector<Eigen::Vector4d> normal_vec;
+        PointCloudT::Ptr nonPlanar (new PointCloudT());
 
         std::vector<PointCloudT::Ptr> plane_vec_efficient_ppr;
         std::vector<pcl::ModelCoefficients::Ptr> normal_vec_efficient_ppr;
-        PointCloudT::Ptr nonPlanar (new PointCloudT());
+        // std::vector<Eigen::Vector4d> normal_vec_efficient_ppr;
 
         std::cout << "Efficient PPR..................." << std::endl;
-        planeDetection::planeSegmentationEfficientPPR(segment, normals, params, plane_vec_efficient_ppr, normal_vec_efficient_ppr, nonPlanar);
+        // planeDetection::planeSegmentationEfficientPPR(segment, params, plane_vec, normal_vec, nonPlanar);
+        planeDetection::planeSegmentationEfficientPPRSinglePlanes(segment, normals, params, plane_vec_efficient_ppr, normal_vec_efficient_ppr, nonPlanar);
         // PROJECT TO PLANE
         for ( size_t i = 0; i < normal_vec_efficient_ppr.size(); ++i ){
             EXX::compression::projectToPlaneS( plane_vec_efficient_ppr[i], normal_vec_efficient_ppr[i] );
         }
+        std::cout << "Extracted " << plane_vec_efficient_ppr.size() << "  planes, Efficient PPR" << std::endl;
         PointCloudT::Ptr outCloudEfficientPPR( new PointCloudT() );
         combinePlanes(plane_vec_efficient_ppr, outCloudEfficientPPR);
 
-        std::vector<PointCloudT::Ptr> plane_vec_pcl_ppr;
-        std::vector<Eigen::Vector4d> normal_vec_pcl_ppr;
-        std::cout << "PCL PPR.........................." << std::endl;
-        planeDetection::planeSegmentationPPR(segment, normals, plane_vec_pcl_ppr, normal_vec_pcl_ppr, nonPlanar);
-        for ( size_t i = 0; i < normal_vec_pcl_ppr.size(); ++i ){
-            EXX::compression::projectToPlaneS( plane_vec_pcl_ppr[i], normal_vec_pcl_ppr[i] );
-        }
-        PointCloudT::Ptr outCloudPCLPPR( new PointCloudT() );
-        combinePlanes(plane_vec_pcl_ppr, outCloudPCLPPR);
 
+        PointCloudT::Ptr nonPlanar_nils (new PointCloudT());
 
-        std::vector<PointCloudT::Ptr> plane_vec_pcl_;
-        std::vector<Eigen::Vector4d> normal_vec_pcl_;
-        std::cout << "PCL..............................." << std::endl;
-        planeDetection::planeSegmentationPPR(segment, normals, plane_vec_pcl_, normal_vec_pcl_, nonPlanar);
-        for ( size_t i = 0; i < normal_vec_pcl_.size(); ++i ){
-            EXX::compression::projectToPlaneS( plane_vec_pcl_[i], normal_vec_pcl_[i] );
+        std::vector<PointCloudT::Ptr> plane_vec_nils;
+        std::vector<Eigen::Vector4d> normal_vec_nils;
+        planeSegmentationNILS( segment, plane_vec_nils, normal_vec_nils, nonPlanar_nils);
+        for ( size_t i = 0; i < normal_vec_nils.size(); ++i ){
+            EXX::compression::projectToPlaneS( plane_vec_nils[i], normal_vec_nils[i] );
         }
-        PointCloudT::Ptr outCloudPCL( new PointCloudT() );
-        combinePlanes(plane_vec_pcl_, outCloudPCL);
+        std::cout << "Extracted " << normal_vec_nils.size() << "  planes, Efficient NILS" << std::endl;
+        PointCloudT::Ptr outCloudEfficientNils( new PointCloudT() );
+        combinePlanes(plane_vec_nils, outCloudEfficientNils);
+
+        //
+        //
+        // std::vector<PointCloudT::Ptr> plane_vec_pcl_;
+        // std::vector<Eigen::Vector4d> normal_vec_pcl_;
+        // std::cout << "PCL..............................." << std::endl;
+        // planeDetection::planeSegmentationPCL(segment, normals, plane_vec_pcl_, normal_vec_pcl_, nonPlanar);
+        // for ( size_t i = 0; i < normal_vec_pcl_.size(); ++i ){
+        //     EXX::compression::projectToPlaneS( plane_vec_pcl_[i], normal_vec_pcl_[i] );
+        // }
+        // PointCloudT::Ptr outCloudPCL( new PointCloudT() );
+        // combinePlanes(plane_vec_pcl_, outCloudPCL);
 
 
         pcl::PCDWriter writer;
         writer.write(path + "outCloudEfficientPPR.pcd", *outCloudEfficientPPR);
-        writer.write(path + "outCloudPCLPPR.pcd", *outCloudPCLPPR);
-        writer.write(path + "outCloudPCL.pcd", *outCloudPCL);
+        writer.write(path + "outCloudEfficientNils.pcd", *outCloudEfficientNils);
+        // writer.write(path + "outCloudPCL.pcd", *outCloudPCL);
 
     }
 
@@ -172,14 +172,14 @@ private:
 
 
     void planeSegmentationNILS( const PointCloudT::Ptr cloud_in,
-                            const NormalCloudT::Ptr normals,
+                            // const NormalCloudT::Ptr normals,
                             std::vector<PointCloudT::Ptr> &plane_vec,
                             std::vector<Eigen::Vector4d> &normal_vec,
                             PointCloudT::Ptr nonPlanar){
         // Perform the compression
         // RANSAC
         std::vector<base_primitive*> primitives = { new plane_primitive() };
-        primitive_extractor<PointT> extractor(cloud_in, normals, primitives, params, NULL);
+        primitive_extractor<PointT> extractor(cloud_in, primitives, params, NULL);
         std::vector<base_primitive*> extracted;
         extractor.extract(extracted);
 
@@ -191,7 +191,7 @@ private:
         for (size_t j = 0; j < extracted.size(); ++j){
             ind = extracted[j]->supporting_inds;
 
-            if(ind.size() < 1000) continue;
+            if(ind.size() < 200) continue;
 
             inliers->indices.reserve(inliers->indices.size() + ind.size());
             inliers->indices.insert(inliers->indices.end(), ind.begin(), ind.end());
@@ -250,7 +250,7 @@ private:
     // //  outvec, vector containing PointClouds where each PointCloud represents a single cluster.
     // template<typename PT>
     // void ecClustering(const typename pcl::PointCloud<PT>::Ptr cloud, const float tolerance, const float min_size, const float max_size,
-    //     std::vector<typename pcl::PointCloud<PT>::Ptr> &outvec){
+    //     std::vector<typename pcl::PointCloud<PT>::Ptr> &outvec){ plane_vec_pcl_ppr;
     //
     //     typename pcl::search::KdTree<PT>::Ptr tree (new pcl::search::KdTree<PT>);
     //     tree->setInputCloud(cloud);
