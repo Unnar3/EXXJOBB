@@ -2,6 +2,7 @@
 #include <pcl_ros/transforms.h>
 #include <exx_compression/compression.h>
 #include <exx_compression/planes.h>
+#include <plane_extraction/plane_extraction.h>
 // #include <utils/utils.h>
 #include <dbscan/dbscan.h>
 #include <utils/utils.cpp>
@@ -66,6 +67,7 @@ public:
 private:
     ros::Publisher point_cloud_publisher;
     EXX::compression cmprs;
+    EXX::planeExtraction planeEx;
     primitive_params params;
 
 public:
@@ -123,7 +125,7 @@ public:
 
         std::cout << "Efficient PPR..................." << std::endl;
         // planeDetection::planeSegmentationEfficientPPR(segment, params, plane_vec, normal_vec, nonPlanar);
-        planeDetection::planeSegmentationEfficientPPRSinglePlanes(segment, normals, params, plane_vec_efficient_ppr, normal_vec_efficient_ppr, nonPlanar);
+        planeEx.planeSegmentationEfficientPPRSinglePlanes(segment, normals, params, plane_vec_efficient_ppr, normal_vec_efficient_ppr, nonPlanar);
         // PROJECT TO PLANE
         for ( size_t i = 0; i < normal_vec_efficient_ppr.size(); ++i ){
             EXX::compression::projectToPlaneS( plane_vec_efficient_ppr[i], normal_vec_efficient_ppr[i] );
