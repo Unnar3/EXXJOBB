@@ -1,15 +1,5 @@
 #include <Refinement/SurfaceRefinement.h>
 
-typedef pcl::PointXYZRGB PointT;
-typedef pcl::PointCloud<PointT> PointCloudT;
-typedef pcl::Normal PointN;
-typedef pcl::PointCloud<PointN> PointCloudN;
-typedef pcl::PointXYZRGBA PointTA;
-typedef pcl::PointCloud<PointTA> PointCloudTA;
-typedef pcl::ModelCoefficients ModelCoeffT;
-typedef std::vector<PointCloudT::Ptr> vPointCloudT;
-typedef std::vector<PointCloudTA::Ptr> vPointCloudTA;
-
 namespace planeDetection{
 
     //Gets initial guess using ransac to find the largest plane

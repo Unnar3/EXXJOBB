@@ -171,18 +171,6 @@ namespace planeDetection{
                             *normals += *normals_tmp;
                         }
                     }
-
-
-                    // pcl::PointIndices::Ptr tmp (new pcl::PointIndices());
-                    // tmp->indices.reserve(cluster_indices[ind].indices.size());
-                    // for(auto p : cluster_indices[ind].indices){
-                    //     tmp->indices.push_back(p);
-                    // }
-                    // extract.setInputCloud (planet);
-                    // extract.setIndices (tmp);
-                    // extract.setNegative (true);
-                    // extract.filter (*cloud_tmpt);
-                    // *cloud += *cloud_tmpt;
                 }
 
             }

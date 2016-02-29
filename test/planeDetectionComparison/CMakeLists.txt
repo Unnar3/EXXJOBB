@@ -41,7 +41,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${CGAL_
 include(${CGAL_USE_FILE})
 
 add_executable(comparison src/comparison.cpp)
-target_link_libraries(comparison ${catkin_LIBRARIES} ${QT_LIBRARIES} compression)
+target_link_libraries(comparison ${catkin_LIBRARIES} ${QT_LIBRARIES} compression plane_extraction)
 
 add_executable(createTestCloud src/createTestCloud.cpp)
 target_link_libraries(createTestCloud ${catkin_LIBRARIES})

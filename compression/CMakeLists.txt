@@ -11,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   	std_msgs
   	message_generation
     qt_build
+    ProbabilisticPrimitiveRefinement
+    ransac_primitives
 )
 
 rosbuild_prepare_qt4(QtCore QtXml)
@@ -39,6 +41,8 @@ include(${CGAL_USE_FILE})
 
 add_library(compression src/compression.cpp)
 add_library(reconstruction src/reconstruction.cpp)
+add_library(plane_extraction src/plane_extraction.cpp)
 add_library(utils include/utils/utils.cpp)
 target_link_libraries(compression utils ${catkin_LIBRARIES} libvtkCommon.so libvtkFiltering.so libvtkGraphics.so)
 target_link_libraries(reconstruction ${catkin_LIBRARIES} ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
+target_link_libraries(plane_extraction ${catkin_LIBRARIES})

@@ -21,4 +21,10 @@
 
   <build_depend>libqt4-dev</build_depend>
   <run_depend>libqt4-dev</run_depend>
+
+  <build_depend>ProbabilisticPrimitiveRefinement</build_depend>
+  <run_depend>ProbabilisticPrimitiveRefinement</run_depend>
+
+  <build_depend>ransac_primitives</build_depend>
+  <run_depend>ransac_primitives</run_depend>
 </package>
