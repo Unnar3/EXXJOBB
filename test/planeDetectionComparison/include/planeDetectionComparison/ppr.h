@@ -15,14 +15,14 @@ namespace planeDetection{
     //Gets initial guess using ransac to find the largest plane
 	//Refines the result using Probabilistic Plane Refinement
 	//Visualize
-	pcl::PointIndices::Ptr segmentPPR(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, pcl::ModelCoefficients::Ptr coefficients){
+	pcl::PointIndices::Ptr segmentPPR(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, pcl::ModelCoefficients::Ptr coefficients, float max_dist){
 
 		ppr::SurfaceRefinement * refinement;
 		refinement = new ppr::SurfaceRefinement();
 		refinement->use_colors = true;
 		refinement->setDebugg(false);
 		refinement->setVisualize(false);
-		refinement->setMaxDistance(0.1f);
+		refinement->setMaxDistance(max_dist);
 
 
 		pcl::PointIndices::Ptr inl (new pcl::PointIndices);
@@ -60,7 +60,8 @@ namespace planeDetection{
 		for(int w = 0; w < width; w++){
 			for(int h = 0; h < height; h++){
 				pcl::PointXYZRGBNormal & point = cloud_normals->points.at(h*cloud->width+w);
-				if(!isnan(point.z)){refinement->use_colors = true;
+				if(!isnan(point.z)){
+                    refinement->use_colors = true;
 					float d =  fabs(p->distance(point.x,point.y,point.z));
 					inliers[w][h] = d < 0.1;
 				}else{

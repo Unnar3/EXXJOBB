@@ -75,7 +75,7 @@ namespace planeDetection{
                 i++;
                 break;
             }
-            inliers = segmentPPR(cloud_in, coefficients);
+            inliers = segmentPPR(cloud_in, coefficients, 0.05);
 
             // Extract the planar inliers from the input cloud
             pcl::ExtractIndices<PointT> extract;

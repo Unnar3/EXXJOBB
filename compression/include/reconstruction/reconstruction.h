@@ -16,7 +16,7 @@
 #include <CGAL/Polygon_2.h>
 #include <CGAL/intersections.h>
 
-#include <PointTypes/surfel_type.h>
+// #include <PointTypes/surfel_type.h>
 // #include <typedefs/typedef.h>
 #include <Eigen/Dense>
 #include <vector>
@@ -39,9 +39,13 @@ namespace EXX{
 
     class reconstruction{
 
+        int a = 0;
+
     public:
-        reconstruction(){}
-        ~reconstruction(){}
+        reconstruction(void){
+            a = 2;
+        };
+        ~reconstruction(){};
 
         // Creates a Delaunay triangulation from a set of 2D points.
         // INPUTS:

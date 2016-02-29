@@ -23,11 +23,11 @@ hullAlpha               : 0.07,
 # Strand ransac params
 disjoinedSet            : 10,
 octree_res              : 1.0,
-normal_neigbourhood     : 0.3,
-inlier_threshold        : 0.05,
-inlier_min              : 1000,
-min_shape               : 1000,
-angle_threshold         : 0.35,
+normal_neigbourhood     : 0.04,
+inlier_threshold        : 0.02,
+inlier_min              : 250,
+min_shape               : 250,
+angle_threshold         : 0.1,
 add_threshold           : 0.1,
 connectedness_res       : 0.2,
 distance_threshold      : 0.0,
@@ -41,4 +41,22 @@ GP3Ksearch              : 50,
 # TOPICS
 TOPIC_POINT_CLOUD       : "/camera/depth_registered/points",
 HZ                      : 20,
+
+
+
+
+
+# NO NOISE, EFFICIENT PPR
+# disjoinedSet            : 10,
+# octree_res              : 1.0,
+# normal_neigbourhood     : 0.04,
+# inlier_threshold        : 0.02,
+# inlier_min              : 250,
+# min_shape               : 250,
+# angle_threshold         : 0.1,
+# add_threshold           : 0.1,
+# connectedness_res       : 0.2,
+# distance_threshold      : 0.0,
+
+
 }
