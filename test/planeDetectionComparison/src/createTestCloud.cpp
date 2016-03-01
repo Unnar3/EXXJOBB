@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     // ros::Rate loop_rate(10);
 
     double tableDistFromWall = 0.05;
-    double variance = 0.000;
+    double variance = 0.02;
 
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_floor (new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_wall1 (new pcl::PointCloud<pcl::PointXYZRGB>);

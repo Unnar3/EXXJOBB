@@ -70,4 +70,20 @@ namespace EXX{
         extract.setNegative (false);
         extract.filter (*extracted);
     }
+
+    template <typename EIG>
+    void planeExtraction::eigenToModelCefficient(const EIG eig, ModelCoeffT::Ptr coeff){
+        coeff->values.resize(eig.size());
+        for (size_t i = 0; i < eig.size(); i++) {
+            coeff->values[i] = eig[i];
+        }
+    }
+
+    template <typename EIG>
+    void planeExtraction::modelCefficientToEigen(const ModelCoeffT::Ptr coeff, EIG eig){
+        eig.resize(coeff->values.size());
+        for (size_t i = 0; i < coeff->values.size(); i++) {
+            eig[i] = coeff->values[i];
+        }
+    }
 }
