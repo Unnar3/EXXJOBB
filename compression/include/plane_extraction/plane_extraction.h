@@ -23,26 +23,49 @@ namespace EXX{
         typedef pcl::PointCloud<PointN> PointCloudN;
         typedef pcl::ModelCoefficients ModelCoeffT;
 
+        primitive_params params_primitives_;
+        bool params_primitives_set_;
+
     public:
-        planeExtraction(){}
+        planeExtraction() : params_primitives_set_(false){}
         ~planeExtraction(){}
 
 
-        void planeSegmentationEfficientPPRSinglePlanes( const PointCloudT::Ptr              cloud,
-                                                        PointCloudN::Ptr                    normals,
-                                                        const primitive_params              params,
-                                                        std::vector<PointCloudT::Ptr>     & plane_vec,
-                                                        std::vector<ModelCoeffT::Ptr>     & coeff_vec,
-                                                        PointCloudT::Ptr                    nonPlanar);
+        void planeSegmentationEfficientPPR(     const PointCloudT::Ptr              cloud,
+                                                PointCloudN::Ptr                    normals,
+                                                std::vector<PointCloudT::Ptr>     & plane_vec,
+                                                std::vector<ModelCoeffT::Ptr>     & coeff_vec,
+                                                PointCloudT::Ptr                    nonPlanar);
+
+        void planeSegmentationEfficient(    const PointCloudT::Ptr              cloud,
+                                            PointCloudN::Ptr                    normals,
+                                            std::vector<PointCloudT::Ptr>     & plane_vec,
+                                            std::vector<ModelCoeffT::Ptr>     & coeff_vec,
+                                            PointCloudT::Ptr                    nonPlanar);
+
+        void combinePlanes( const   std::vector<PointCloudT::Ptr>   &planes,
+                                    PointCloudT::Ptr                out,
+                                    bool                            useColor = false);
+
+        void combinePlanes( const   std::vector<PointCloudT::Ptr>   &planes,
+                            const   PointCloudT::Ptr                nonPlanar,
+                                    PointCloudT::Ptr                out,
+                                    bool                            useColor = false);
+
+        void setPrimitiveParameters( primitive_params params ){
+            params_primitives_ = params;
+            params_primitives_set_ = true;
+        }
 
     private:
+
+        void checkIfParamsHaveBeenSet();
 
         void estimateNormals(const PointCloudT::Ptr cloud, PointCloudN::Ptr normals, float rad);
 
 
         bool extractPlaneEfficientRANSAC(   const PointCloudT::Ptr  cloud_in,
                                             const PointCloudN::Ptr  normals,
-                                            const primitive_params  params,
                                             pcl::PointIndices::Ptr  indices,
                                             ModelCoeffT::Ptr        coeff);
 
@@ -93,6 +116,19 @@ namespace EXX{
                 PointCloudN::Ptr        normals,
                 PointCloudT::Ptr        plane,
                 pcl::PointIndices::Ptr  inliers);
+
+        template <typename EIG>
+        void eigenToModelCefficient(const EIG eig, ModelCoeffT::Ptr coeff);
+
+        template <typename EIG>
+        void modelCefficientToEigen(const ModelCoeffT::Ptr coeff, EIG eig);
+
+        void generateRandomColor(   int mix_red,
+                                    int mix_green,
+                                    int mix_blue,
+                                    int & red,
+                                    int & green,
+                                    int & blue);
 
     };
 }

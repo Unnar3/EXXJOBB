@@ -3,38 +3,100 @@
 
 namespace EXX{
 
-    void planeExtraction::planeSegmentationEfficientPPRSinglePlanes(
+    void planeExtraction::planeSegmentationEfficientPPR(
                 const PointCloudT::Ptr              cloud,
                 PointCloudN::Ptr                    normals,
-                const primitive_params              params,
                 std::vector<PointCloudT::Ptr>     & plane_vec,
                 std::vector<ModelCoeffT::Ptr>     & coeff_vec,
                 PointCloudT::Ptr                    nonPlanar){
+
+
+        planeExtraction::checkIfParamsHaveBeenSet();
 
         *nonPlanar = *cloud;
 
         if(cloud->points.size() != normals->points.size()){
             std::cout << "Empty normal cloud. Need to estimate the normals !!!" << std::endl;
-            estimateNormals(cloud, normals, params.normal_neigbourhood);
+            estimateNormals(cloud, normals, params_primitives_.normal_neigbourhood);
         }
 
+        int fail_count = 0;
         while(1){
 
             pcl::PointIndices::Ptr indices (new pcl::PointIndices());
             ModelCoeffT::Ptr coeff (new ModelCoeffT());
-            if(extractPlaneEfficientRANSAC(nonPlanar, normals, params, indices, coeff)){
+            if(extractPlaneEfficientRANSAC(nonPlanar, normals, indices, coeff)){
 
                 PointCloudT::Ptr plane (new PointCloudT());
 
                 runPPRSinglePlane(nonPlanar, normals, coeff, plane);
-                if(plane->points.size() > 500){
+                if(plane->points.size() > 250){
                     plane_vec.push_back(plane);
                     coeff_vec.push_back(coeff);
-                    continue;
+                    fail_count = 0;
+                } else if(fail_count < 5){
+                    *nonPlanar += *plane;
+                    fail_count++;
+                } else {
+                    break;
                 }
             }
-            break;
         }
+    }
+
+
+    void planeExtraction::planeSegmentationEfficient(
+            const PointCloudT::Ptr              cloud,
+            PointCloudN::Ptr                    normals,
+            std::vector<PointCloudT::Ptr>     & plane_vec,
+            std::vector<ModelCoeffT::Ptr>     & coeff_vec,
+            PointCloudT::Ptr                    nonPlanar){
+        // hull_alpha_
+
+        planeExtraction::checkIfParamsHaveBeenSet();
+
+        if(cloud->points.size() != normals->points.size()){
+            std::cout << "Empty normal cloud. Need to estimate the normals !!!" << std::endl;
+            estimateNormals(cloud, normals, params_primitives_.normal_neigbourhood);
+        }
+
+
+        std::vector<base_primitive*> primitives = { new plane_primitive() };
+        primitive_extractor<PointT> extractor(cloud, normals, primitives, params_primitives_, NULL);
+        std::vector<base_primitive*> extracted;
+        extractor.extract_single_param(false);
+        extractor.extract(extracted);
+
+
+        std::vector<int> ind;
+        pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
+        pcl::ExtractIndices<PointT> extract;
+        Eigen::VectorXd data;
+        for (size_t j = 0; j < extracted.size(); ++j){
+            ind = extracted[j]->supporting_inds;
+
+            if(ind.size() < 200) continue;
+
+            inliers->indices.reserve(inliers->indices.size() + ind.size());
+            inliers->indices.insert(inliers->indices.end(), ind.begin(), ind.end());
+
+            extracted.at(j)->shape_data(data);
+            ModelCoeffT::Ptr coeff (new ModelCoeffT());
+            planeExtraction::eigenToModelCefficient(data.segment<4>(0), coeff);
+            coeff_vec.push_back(coeff);
+
+            PointCloudT::Ptr test_cloud (new PointCloudT ());
+            test_cloud->points.resize(ind.size());
+            for (size_t i = 0; i < ind.size(); ++i){
+                test_cloud->points[i] = cloud->points[ind[i]];
+            }
+            plane_vec.push_back(test_cloud);
+        }
+
+        extract.setInputCloud (cloud);
+        extract.setIndices (inliers);
+        extract.setNegative (true);
+        extract.filter (*nonPlanar);
     }
 
 
@@ -48,7 +110,7 @@ namespace EXX{
 
         PointCloudT::Ptr cloud_tmp (new PointCloudT());
         pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
-        inliers = segmentPPR(nonPlanar, coeff, 0.02);
+        inliers = segmentPPR(nonPlanar, coeff, 0.2);
 
         // PointCloudT::Ptr plane (new PointCloudT);
         extractIndices(nonPlanar, normals, plane, inliers);
@@ -59,14 +121,13 @@ namespace EXX{
     bool planeExtraction::extractPlaneEfficientRANSAC(
             const PointCloudT::Ptr  cloud_in,
             const PointCloudN::Ptr  normals,
-            const primitive_params  params,
             pcl::PointIndices::Ptr  indices,
             ModelCoeffT::Ptr        coeff){
 
 
         // RANSAC
         std::vector<base_primitive*> primitives = { new plane_primitive() };
-        primitive_extractor<PointT> extractor(cloud_in, normals, primitives, params, NULL);
+        primitive_extractor<PointT> extractor(cloud_in, normals, primitives, params_primitives_, NULL);
         std::vector<base_primitive*> extracted;
         extractor.extract_single_param(true);
         extractor.extract(extracted);
@@ -240,6 +301,84 @@ namespace EXX{
             }
         }
 
+    }
+
+    void planeExtraction::generateRandomColor(
+            int mix_red,
+            int mix_green,
+            int mix_blue,
+            int & red,
+            int & green,
+            int & blue){
+
+        red = ((rand() % 255) + mix_red) / 2;
+        green = ((rand() % 255) + mix_green) / 2;
+        blue = ((rand() % 255) + mix_blue) / 2;
+
+        if(red < 20 && green < 20 && blue < 20){
+            red += 30;
+            green += 30;
+            blue += 30;
+        }
+
+    }
+
+    void planeExtraction::combinePlanes(
+            const   std::vector<PointCloudT::Ptr>   &planes,
+                    PointCloudT::Ptr                out,
+                    bool                            useColor){
+
+        // Check if out is empty an clear it if is not
+        if( out->points.size() == 0 ) out->clear();
+
+        int red, green, blue;
+        for( auto plane : planes ){
+            int sizeOut = out->points.size();
+            *out += *plane;
+            if(useColor){
+                planeExtraction::generateRandomColor(137,196,244, red,green,blue);
+                for (size_t i = sizeOut; i < out->points.size(); i++) {
+                    out->points[i].r = red;
+                    out->points[i].g = green;
+                    out->points[i].b = blue;
+                }
+            }
+        }
+    }
+
+    void planeExtraction::combinePlanes(
+            const   std::vector<PointCloudT::Ptr>   &planes,
+            const   PointCloudT::Ptr                nonPlanar,
+                    PointCloudT::Ptr                out,
+                    bool                            useColor){
+
+        // Check if out is empty an clear it if is not
+        if( out->points.size() == 0 ) out->clear();
+
+        planeExtraction::combinePlanes(planes, out, useColor);
+
+        int red, green, blue;
+        int sizeOut = out->points.size();
+        *out += *nonPlanar;
+        if(useColor){
+            planeExtraction::generateRandomColor(137,196,244, red,green,blue);
+            for (size_t i = sizeOut; i < out->points.size(); i++) {
+                out->points[i].r = 255;
+                out->points[i].g = 255;
+                out->points[i].b = 255;
+            }
+        }
+    }
+
+    void planeExtraction::checkIfParamsHaveBeenSet(){
+        if(!params_primitives_set_){
+            std::cout << " " << std::endl;
+            std::cout << "ERROR, PARAMETERS HAVE NOT BEEN SET!!!" << std::endl;
+            std::cout << "Need to be set using setPrimitiveParameters" << std::endl;
+            std::cout << "EXITING" << std::endl;
+            std::cout << " " << std::endl;
+            exit(0);
+        }
     }
 
 
