@@ -29,18 +29,23 @@ namespace EXX{
 
                 PointCloudT::Ptr plane (new PointCloudT());
 
-                runPPRSinglePlane(nonPlanar, normals, coeff, plane);
-                if(plane->points.size() > 250){
-                    plane_vec.push_back(plane);
-                    coeff_vec.push_back(coeff);
-                    fail_count = 0;
-                } else if(fail_count < 5){
-                    *nonPlanar += *plane;
-                    fail_count++;
+                if(runPPRSinglePlane(nonPlanar, normals, coeff, plane)){
+                    if(plane->points.size() > 250){
+                        plane_vec.push_back(plane);
+                        coeff_vec.push_back(coeff);
+                    } else {
+                        *nonPlanar += *plane;
+                        fail_count++;
+                    }
                 } else {
-                    break;
+                    std::cout << "DIDN'T WORK" << std::endl;
+                    fail_count++;
                 }
+            } else {
+                fail_count++;
             }
+
+            if(fail_count > 5) break;
         }
     }
 
@@ -100,7 +105,7 @@ namespace EXX{
     }
 
 
-    void planeExtraction::runPPRSinglePlane(
+    bool planeExtraction::runPPRSinglePlane(
             PointCloudT::Ptr    nonPlanar,
             PointCloudN::Ptr    normals,
             ModelCoeffT::Ptr    coeff,
@@ -110,10 +115,13 @@ namespace EXX{
 
         PointCloudT::Ptr cloud_tmp (new PointCloudT());
         pcl::PointIndices::Ptr inliers (new pcl::PointIndices ());
-        inliers = segmentPPR(nonPlanar, coeff, 0.2);
-
+        inliers = segmentPPR(nonPlanar, coeff, 0.1);
+        if(inliers == NULL){
+            return false;
+        }
         // PointCloudT::Ptr plane (new PointCloudT);
         extractIndices(nonPlanar, normals, plane, inliers);
+        return true;
 
     }
 
@@ -236,7 +244,11 @@ namespace EXX{
 			}
 		}
 
-		refinement->improve(inliers,cloud_normals,p);
+        bool worked = true;
+		if(refinement->improve(inliers,cloud_normals,p) == NULL){
+            pcl::PointIndices::Ptr tmp;
+            return tmp;
+        }
 
 		for(int w = 0; w < width; w++){
 			for(int h = 0; h < height; h++){
