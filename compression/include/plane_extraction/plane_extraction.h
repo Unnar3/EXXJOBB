@@ -71,7 +71,7 @@ namespace EXX{
 
 
 
-        void runPPRSinglePlane( PointCloudT::Ptr        nonPlanar,
+        bool runPPRSinglePlane( PointCloudT::Ptr        nonPlanar,
                                 PointCloudN::Ptr        normals,
                                 ModelCoeffT::Ptr        coeff,
                                 PointCloudT::Ptr        plane);

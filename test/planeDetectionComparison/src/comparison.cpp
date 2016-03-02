@@ -84,24 +84,26 @@ public:
         // EFFICIENT RANSAC with PPR
         ////////////////////////////////////////////////////////////////////////
 
-        // PointCloudT::Ptr nonPlanar (new PointCloudT());
-        //
-        // std::vector<PointCloudT::Ptr> plane_vec_efficient_ppr;
-        // std::vector<pcl::ModelCoefficients::Ptr> normal_vec_efficient_ppr;
-        // std::vector<Eigen::Vector4d> normal_vec_efficient_ppr;
+        PointCloudT::Ptr nonPlanar (new PointCloudT());
 
-        // std::cout << "Efficient PPR..................." << std::endl;
-        // // planeDetection::planeSegmentationEfficientPPR(segment, params, plane_vec, normal_vec, nonPlanar);
-        // planeEx.planeSegmentationEfficientPPR(segment, normals, plane_vec_efficient_ppr, normal_vec_efficient_ppr, nonPlanar);
-        // // PROJECT TO PLANE
-        // for ( size_t i = 0; i < normal_vec_efficient_ppr.size(); ++i ){
-        //     EXX::compression::projectToPlaneS( plane_vec_efficient_ppr[i], normal_vec_efficient_ppr[i] );
-        // }
-        // PointCloudT::Ptr outCloudEfficientPPR( new PointCloudT() );
-        // planeEx.combinePlanes(plane_vec_efficient_ppr, outCloudEfficientPPR, true);
-        //
-        // std::cout << "Extracted " << plane_vec_efficient_ppr.size() << "  planes, Efficient PPR" << std::endl;
-        // std::cout << " " << std::endl;
+        std::vector<PointCloudT::Ptr> plane_vec_efficient_ppr;
+        std::vector<pcl::ModelCoefficients::Ptr> normal_vec_efficient_ppr;
+
+        std::cout << "Efficient PPR..................." << std::endl;
+        // planeDetection::planeSegmentationEfficientPPR(segment, params, plane_vec, normal_vec, nonPlanar);
+        planeEx.planeSegmentationEfficientPPR(segment, normals, plane_vec_efficient_ppr, normal_vec_efficient_ppr, nonPlanar);
+        // PROJECT TO PLANE
+        for ( size_t i = 0; i < normal_vec_efficient_ppr.size(); ++i ){
+            EXX::compression::projectToPlaneS( plane_vec_efficient_ppr[i], normal_vec_efficient_ppr[i] );
+        }
+        PointCloudT::Ptr outCloudEfficientPPR( new PointCloudT() );
+        planeEx.combinePlanes(plane_vec_efficient_ppr, outCloudEfficientPPR, true);
+
+        std::cout << "Extracted " << plane_vec_efficient_ppr.size() << "  planes, Efficient PPR" << std::endl;
+        std::cout << "Planar points: " << outCloudEfficientPPR->points.size() << std::endl;
+        std::cout << "Non planar points: " << nonPlanar->points.size() << std::endl;
+        std::cout << "Combined: " << outCloudEfficientPPR->points.size() + nonPlanar->points.size() << std::endl;
+        std::cout << " " << std::endl;
 
         ////////////////////////////////////////////////////////////////////////
         // EFFICIENT RANSAC
@@ -118,10 +120,13 @@ public:
         PointCloudT::Ptr outCloudEfficient( new PointCloudT() );
         planeEx.combinePlanes(plane_vec_efficient, outCloudEfficient, true);
         std::cout << "Extracted " << normal_vec_efficient.size() << "  planes, Efficient" << std::endl;
+        std::cout << "Planar points: " << outCloudEfficient->points.size() << std::endl;
+        std::cout << "Non planar points: " << nonPlanar_efficient->points.size() << std::endl;
+        std::cout << "Combined: " << outCloudEfficient->points.size() + nonPlanar_efficient->points.size() << std::endl;
         std::cout << " " << std::endl;
 
         pcl::PCDWriter writer;
-        // writer.write(path + "outCloudEfficientPPR.pcd", *outCloudEfficientPPR);
+        writer.write(path + "outCloudEfficientPPR.pcd", *outCloudEfficientPPR);
         writer.write(path + "outCloudEfficient.pcd", *outCloudEfficient);
 
     }

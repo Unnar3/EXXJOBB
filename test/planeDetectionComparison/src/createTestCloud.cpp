@@ -292,6 +292,7 @@ int main(int argc, char **argv) {
     std::string path = "/home/unnar/catkin_ws/src/EXXJOBB/test/planeDetectionComparison/src/";
     writer.write(path + "testCloud_complete.pcd", *cloud);
 
+    std::cout << "testCloud_complete size: " << cloud->points.size() << std::endl;
 
     pcl::PointIndices::Ptr indices (new pcl::PointIndices());
     std::uniform_real_distribution<> dis_remove(0.0, 1.0);
@@ -319,6 +320,7 @@ int main(int argc, char **argv) {
     *cloud += *cloud_window5;
 
     writer.write(path + "testCloud_hurt1.pcd", *cloud);
+    std::cout << "testCloud_hurt1 size: " << cloud->points.size() << std::endl;
 
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
     viewer = rgbVis(cloud);
