@@ -37,6 +37,15 @@ catkin_package(
 	CATKIN_DEPENDS message_runtime exx_compression qt_build libqt4-dev
     LIBRARIES cgal
 )
+
+##############################################
+# Google test library location
+# Locate GTest
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
+##############################################
+
+
 include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${CGAL_INCLUDE_DIRS})
 include(${CGAL_USE_FILE})
 
@@ -51,3 +60,6 @@ target_link_libraries(createTestCloud ${catkin_LIBRARIES})
 
 add_executable(useTestCloud src/useTestCloud.cpp)
 target_link_libraries(useTestCloud ${catkin_LIBRARIES} ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} reconstruction)
+
+add_executable(testQuadTree src/testQuadTree.cpp)
+target_link_libraries(testQuadTree ${catkin_LIBRARIES} ${GTEST_LIBRARIES})
