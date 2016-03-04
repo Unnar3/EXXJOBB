@@ -7,8 +7,19 @@
 #include <pcl/for_each_type.h>
 #include <pcl/Vertices.h>
 
+// CGAL
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Polygon_2.h>
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef K::Point_2 Point;
+typedef CGAL::Polygon_2<K>                                  Polygon;
+
 template <typename PointT>
 class QuadTree{
+
+    enum CellType{ Interior, Boundary, Exterior, Hole, Parent};
+
     float x_, y_;
     float max_width_;
     float width_;
@@ -17,6 +28,7 @@ class QuadTree{
     bool use_color_;
     bool is_leaf_;
     bool is_boundary_;
+    CellType cellType;
     std::vector<QuadTree<PointT> > nodes;
     std::vector<PointT> points;
 public:
@@ -26,6 +38,9 @@ public:
     ~QuadTree(){}
 
     int insert(PointT point, bool boundary);
+    bool insertBoundary(typename pcl::PointCloud<PointT>::Ptr boundary);
+    bool insertBoundary(Polygon polygon);
+    void insertHole(Polygon polygon);
 
     // Determines if color information will be used in decemation.
     void useColor(bool use_color);
@@ -50,11 +65,14 @@ public:
     int getTreeDepth();
     bool decemate();
     void createPointCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, std::vector< pcl::Vertices > &vertices);
+    void createPointCloudBoundary(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, std::vector< pcl::Vertices > &vertices);
 
 private:
-    bool shouldCreateSubNodes();
+    bool maxDepth();
     void createSubNodesAndInherit();
     int returnQuadrant(PointT p);
+    bool polygonCompletelyWithinCell(Polygon &polygon);
+    void setCellType(CellType type){ cellType = type; }
 };
 
 #include "quadtree.hpp"
