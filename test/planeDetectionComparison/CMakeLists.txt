@@ -46,6 +46,9 @@ include_directories(${GTEST_INCLUDE_DIRS})
 ##############################################
 
 
+add_library(quadtree src/quadtree.cpp)
+target_link_libraries(quadtree ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
+
 include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${CGAL_INCLUDE_DIRS})
 include(${CGAL_USE_FILE})
 
@@ -62,4 +65,4 @@ add_executable(useTestCloud src/useTestCloud.cpp)
 target_link_libraries(useTestCloud ${catkin_LIBRARIES} ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} reconstruction)
 
 add_executable(testQuadTree src/testQuadTree.cpp)
-target_link_libraries(testQuadTree ${catkin_LIBRARIES} ${GTEST_LIBRARIES})
+target_link_libraries(testQuadTree ${catkin_LIBRARIES} ${GTEST_LIBRARIES} quadtree)
