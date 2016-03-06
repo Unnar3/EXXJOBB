@@ -35,7 +35,7 @@ find_package(CGAL REQUIRED COMPONENTS Core)
 catkin_package(
 	DEPENDS
 	CATKIN_DEPENDS message_runtime exx_compression qt_build libqt4-dev
-    LIBRARIES cgal
+    LIBRARIES
 )
 
 ##############################################
@@ -47,9 +47,9 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 
 add_library(quadtree src/quadtree.cpp)
-target_link_libraries(quadtree ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES})
+target_link_libraries(quadtree ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} gmp)
 add_library(quadtreePCL src/quadtreePCL.cpp)
-target_link_libraries(quadtreePCL quadtree)
+target_link_libraries(quadtreePCL quadtree ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} gmp)
 
 include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${CGAL_INCLUDE_DIRS})
 include(${CGAL_USE_FILE})
@@ -67,4 +67,4 @@ add_executable(useTestCloud src/useTestCloud.cpp)
 target_link_libraries(useTestCloud ${catkin_LIBRARIES} ${CGAL_LIBRARIES} ${CGAL_3RD_PARTY_LIBRARIES} reconstruction)
 
 add_executable(testQuadTree src/testQuadTree.cpp)
-target_link_libraries(testQuadTree ${catkin_LIBRARIES} ${GTEST_LIBRARIES} quadtreePCL)
+target_link_libraries(testQuadTree ${catkin_LIBRARIES} ${GTEST_LIBRARIES} quadtreePCL quadtree)
