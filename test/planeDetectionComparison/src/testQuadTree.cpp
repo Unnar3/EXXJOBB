@@ -225,30 +225,72 @@ typedef pcl::PointCloud<PointTC> PointCloudTC;
 // }
 
 TEST(QuadTreePCL, testCLass){
-    // Eigen::Vector3f normal;
-    // normal << 0,0,1;
-    // Eigen::Vector3f result;
-    //
-    // QuadTreePCL<pcl::PointXYZ> qtPCL(1,10,0,0);
-    // qtPCL.setNormal(normal);
-    // result = qtPCL.getNormal();
-    // ASSERT_EQ(true, result == normal);
-    //
-    // PointT p;
-    // PointCloudT::Ptr cloud (new PointCloudT());
-    // p.x = 2; p.y = 2;
-    // cloud->points.push_back(p);
-    // p.x = 4; p.y = 2;
-    // cloud->points.push_back(p);
-    // p.x = 4; p.y = 7;
-    // cloud->points.push_back(p);
-    // p.x = 2; p.y = 7;
-    // cloud->points.push_back(p);
-    // qtPCL.insertBoundary(cloud);
-    //
-    // PointCloudTC::Ptr out (new PointCloudTC());
-    // std::vector< pcl::Vertices > vertices;
-    // qtPCL.createMesh<PointTC>(out, vertices);
+    Eigen::Vector3f normal;
+    normal << 0,-1,0;
+    Eigen::Vector3f result;
+
+    QuadTreePCL<PointTC> qtpcl(1,10,0,0);
+    // qtpcl.setMaxLevel(10);
+    qtpcl.setMaxWidth(0.1);
+    qtpcl.setNormal(normal);
+    // result = qtpcl.getNormal();
+    // EXPECT_EQ(true, result == normal);
+
+    PointTC p;
+    p.y = 0; p.r = 255; p.g = 255; p.b = 255;
+    PointCloudTC::Ptr cloud (new PointCloudTC());
+    p.x = 0; p.z = 2;
+    cloud->points.push_back(p);
+    p.x = 0; p.z = 0;
+    cloud->points.push_back(p);
+    p.x = 7; p.z = 0;
+    cloud->points.push_back(p);
+    p.x = 7; p.z = 6;
+    cloud->points.push_back(p);
+    p.x = 0; p.z = 6;
+    cloud->points.push_back(p);
+    p.x = 0; p.z = 3;
+    cloud->points.push_back(p);
+
+    p.x = 2; p.z = 2;
+    cloud->points.push_back(p);
+    p.x = 3; p.z = 1;
+    cloud->points.push_back(p);
+    p.x = 5; p.z = 3;
+    cloud->points.push_back(p);
+    p.x = 4; p.z = 4;
+    cloud->points.push_back(p);
+    p.x = 2; p.z = 3;
+    cloud->points.push_back(p);
+
+    // PointCloudTC::Ptr tmp (new PointCloudTC());
+    // *tmp += *cloud;
+    qtpcl.insertBoundary(cloud);
+
+    PointCloudTC::Ptr out (new PointCloudTC());
+    std::vector< pcl::Vertices > vertices;
+    qtpcl.createMesh<PointTC>(out, vertices);
+
+    pcl::Vertices vert;
+    vert.vertices.resize(3);
+    int size = out->size();
+    vert.vertices[0] = size;
+    vert.vertices[1] = size+1;
+    vert.vertices[2] = size+2;
+    vertices.push_back(vert);
+    vert.vertices[0] = size;
+    vert.vertices[1] = size+3;
+    vert.vertices[2] = size+2;
+    vertices.push_back(vert);
+
+    // *out += *tmp;
+
+
+    pcl::visualization::PCLVisualizer::Ptr viewer;
+    viewer.reset(new pcl::visualization::PCLVisualizer);
+    viewer->addPolygonMesh<pcl::PointXYZRGB>(out, vertices);
+    // viewer->addPointCloud<pcl::PointXYZRGB>(out);
+    viewer->spin();
 }
 
 

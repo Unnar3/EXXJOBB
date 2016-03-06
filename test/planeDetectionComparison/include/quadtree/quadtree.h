@@ -68,6 +68,9 @@ public:
     void useColor(bool use_color){ use_color_ = use_color; }
     void setMaxLevel(int level){ max_level_ = level; }
     void setMaxWidth(float width){ max_width_ = width; }
+    // void setX(float x){ x_ = x; }
+    // void setY(float y){ y_ = y; }
+    // void setWidth(float width){ width_ = width; }
 
 
 private:

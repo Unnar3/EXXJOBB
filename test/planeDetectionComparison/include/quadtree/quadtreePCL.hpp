@@ -1,18 +1,43 @@
 #include <pcl/common/transforms.h>
+#include <algorithm>
+#include <pcl/common/common.h>
 
 template <typename PointT>
 void QuadTreePCL<PointT>::insertBoundary(typename pcl::PointCloud<PointT>::Ptr boundary){
     // Convert to cgal polygon
+    if(boundary->size() == 0) return;
 
     QuadTreePCL<PointT>::rotateToAxis(boundary);
+    PointT min, max;
+    pcl::getMinMax3D(*boundary, min, max);
+
+    if(!inserted_){
+        // Determin the inital size of the quadtree
+        z_ = boundary->points[0].z;
+        float x = QuadTreePCL<PointT>::roundDown(min.x);
+        float y = QuadTreePCL<PointT>::roundDown(min.y);
+        float width = std::max(QuadTreePCL<PointT>::roundUp(max.x - x), QuadTreePCL<PointT>::roundUp(max.y - y));
+
+        // initialize the quadtree
+        quad = QuadTree(1,width,x,y);
+        quad.setMaxWidth(0.1);
+    }
 
     Polygon polygon;
     for (size_t i = 0; i < boundary->size(); i++) {
         polygon.push_back(Point(boundary->points[i].x, boundary->points[i].y));
     }
-    std::cout << "muhahaah" << std::endl;
+    if(!polygon.is_simple()){
+        std::cout << "Polygon isn't simple, returning" << std::endl;
+        return;
+    }
+    CGAL::Orientation orientation = polygon.orientation();
+    if(orientation == CGAL::NEGATIVE){
+        std::cout << "need to invert polygon" << std::endl;
+        std::reverse(polygon.vertices_begin(), polygon.vertices_end());
+    }
     quad.insertBoundary(polygon);
-    std::cout << "hahahahh" << std::endl;
+    inserted_ = true;
 }
 
 template <typename PointT>
@@ -62,6 +87,7 @@ void QuadTreePCL<PointT>::createMesh(typename pcl::PointCloud<T>::Ptr cloud, std
         vertices.push_back(vert);
 
     }
+    QuadTreePCL<PointT>::rotateFromAxis(cloud);
 }
 
 template <typename PointT>
@@ -69,24 +95,37 @@ void QuadTreePCL<PointT>::setNormal(Eigen::Vector3f normal){
     normal_ = normal;
     Eigen::Vector3f znorm;
     znorm << 0,0,1;
-    quaternion = Eigen::Quaternion<float>::FromTwoVectors(normal_, znorm);
+    quaternion_ = Eigen::Quaternion<float>::FromTwoVectors(normal_, znorm);
     normalVectorSet = true;
 
-    std::cout << quaternion.x() << std::endl;
-    std::cout << quaternion.y() << std::endl;
-    std::cout << quaternion.z() << std::endl;
-    std::cout << quaternion.w() << std::endl;
+    std::cout << quaternion_.x() << std::endl;
+    std::cout << quaternion_.y() << std::endl;
+    std::cout << quaternion_.z() << std::endl;
+    std::cout << quaternion_.w() << std::endl;
 }
 
 template <typename PointT>
 void QuadTreePCL<PointT>::rotateToAxis(typename pcl::PointCloud<PointT>::Ptr cloud){
 
-    if(quaternion.x() == 0 &&quaternion.y() == 0 && quaternion.z() == 0){
+    if(quaternion_.x() == 0 &&quaternion_.y() == 0 && quaternion_.z() == 0){
         // no rotation needed.
         return;
     }
     // first check if we need to rotate
-    Eigen::Affine3f rot(quaternion.matrix());
+    Eigen::Affine3f rot(quaternion_.matrix());
+    pcl::transformPointCloud (*cloud, *cloud, rot);
+
+}
+
+template <typename PointT>
+void QuadTreePCL<PointT>::rotateFromAxis(typename pcl::PointCloud<PointT>::Ptr cloud){
+
+    if(quaternion_.x() == 0 &&quaternion_.y() == 0 && quaternion_.z() == 0){
+        // no rotation needed.
+        return;
+    }
+    // first check if we need to rotate
+    Eigen::Affine3f rot(quaternion_.conjugate().matrix());
     pcl::transformPointCloud (*cloud, *cloud, rot);
 
 }
