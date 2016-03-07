@@ -4,14 +4,68 @@
 #include <gtest/gtest.h>
 #include <stdlib.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/io/obj_io.h>
+#include <pcl/io/ply_io.h>
+#include <pcl/io/vtk_io.h>
 #include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/filters/extract_indices.h>
 #include <pcl/common/common.h>
+#include <exx_compression/compression.h>
+#include <utils/utils.cpp>
+#include <pcl/TextureMesh.h>
+#include <planeDetectionComparison/utils.h>
+#include <random>
+#include <sensor_msgs/PointField.h>
+// #include <pcl/pcl_config.h>
 
-typedef pcl::PointXYZ PointT;
-typedef pcl::PointCloud<PointT> PointCloudT;
+// typedef pcl::PointXYZ PointT;
+// typedef pcl::PointCloud<PointT> PointCloudT;
 typedef pcl::PointXYZRGB PointTC;
 typedef pcl::PointCloud<PointTC> PointCloudTC;
+using NormalT = pcl::Normal;
+using NormalCloudT = pcl::PointCloud<NormalT>;
 
+
+using namespace EXX::params;
+using namespace EXX;
+void removeIndices(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, pcl::PointIndices::Ptr indices, bool inside){
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr out (new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+    extract.setInputCloud (cloud);
+    extract.setIndices (indices);
+    extract.setNegative (!inside);
+    extract.filter (*out);
+    *cloud=*out;
+}
+
+
+  // Build a passthrough filter to reduce field of view.
+void removePart(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud, double xmin, double xmax, double ymin, double ymax, double zmin, double zmax, bool inside)
+{
+
+    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr out (new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointIndices::Ptr indices (new pcl::PointIndices());
+    for (size_t i = 0; i < cloud->points.size(); i++) {
+        if(cloud->points[i].z > zmin && cloud->points[i].z < zmax){
+          if(cloud->points[i].x > xmin && cloud->points[i].x < xmax){
+            if(cloud->points[i].y > ymin && cloud->points[i].y < ymax){
+              indices->indices.push_back(i);
+            //   std::cout << cloud->points[i].x << ", " << cloud->points[i].y << ", " << cloud->points[i].z << std::endl;
+            }
+          }
+        }
+    }
+    removeIndices(cloud,indices,inside);
+    // pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+    // extract.setInputCloud (cloud);
+    // extract.setIndices (indices);
+    // extract.setNegative (!inside);
+    // extract.filter (*out);
+    // *cloud=*out;
+
+    // Remove the planar inliers, extract the rest
+}
 
 // TEST(QuadTree, typeHasColor) {
 //     QuadTree<pcl::PointXYZRGB> quad(1, 100, 0, 2);
@@ -224,73 +278,158 @@ typedef pcl::PointCloud<PointTC> PointCloudTC;
 //
 // }
 
-TEST(QuadTreePCL, testCLass){
-    Eigen::Vector3f normal;
-    normal << 0,-1,0;
-    Eigen::Vector3f result;
+// TEST(QuadTreePCL, testCLass){
+//     Eigen::Vector3f normal;
+//     normal << 0,-1,0;
+//     Eigen::Vector3f result;
+//
+//     QuadTreePCL<PointTC> qtpcl(1,10,0,0);
+//     // qtpcl.setMaxLevel(10);
+//     qtpcl.setMaxWidth(0.1);
+//     qtpcl.setNormal(normal);
+//     // result = qtpcl.getNormal();
+//     // EXPECT_EQ(true, result == normal);
+//
+//     PointTC p;
+//     p.y = 0; p.r = 255; p.g = 255; p.b = 255;
+//     PointCloudTC::Ptr cloud (new PointCloudTC());
+//     p.x = 0; p.z = 2;
+//     cloud->points.push_back(p);
+//     p.x = 0; p.z = 0;
+//     cloud->points.push_back(p);
+//     p.x = 7; p.z = 0;
+//     cloud->points.push_back(p);
+//     p.x = 7; p.z = 6;
+//     cloud->points.push_back(p);
+//     p.x = 0; p.z = 6;
+//     cloud->points.push_back(p);
+//     p.x = 0; p.z = 3;
+//     cloud->points.push_back(p);
+//
+//     p.x = 2; p.z = 2;
+//     cloud->points.push_back(p);
+//     p.x = 3; p.z = 1;
+//     cloud->points.push_back(p);
+//     p.x = 5; p.z = 3;
+//     cloud->points.push_back(p);
+//     p.x = 4; p.z = 4;
+//     cloud->points.push_back(p);
+//     p.x = 2; p.z = 3;
+//     cloud->points.push_back(p);
+//
+//     // PointCloudTC::Ptr tmp (new PointCloudTC());
+//     // *tmp += *cloud;
+//     qtpcl.insertBoundary(cloud);
+//
+//     PointCloudTC::Ptr out (new PointCloudTC());
+//     std::vector< pcl::Vertices > vertices;
+//     qtpcl.createMesh<PointTC>(out, vertices);
+//
+//     pcl::Vertices vert;
+//     vert.vertices.resize(3);
+//     int size = out->size();
+//     vert.vertices[0] = size;
+//     vert.vertices[1] = size+1;
+//     vert.vertices[2] = size+2;
+//     vertices.push_back(vert);
+//     vert.vertices[0] = size;
+//     vert.vertices[1] = size+3;
+//     vert.vertices[2] = size+2;
+//     vertices.push_back(vert);
+//
+//     // *out += *tmp;
+//
+//
+//     // pcl::visualization::PCLVisualizer::Ptr viewer;
+//     // viewer.reset(new pcl::visualization::PCLVisualizer);
+//     // viewer->addPolygonMesh<pcl::PointXYZRGB>(out, vertices);
+//     // // viewer->addPointCloud<pcl::PointXYZRGB>(out);
+//     // viewer->spin();
+// }
+
+TEST(QuadTreePCL, testCloud){
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_wall1 (new pcl::PointCloud<pcl::PointXYZRGB>);
+    cloud_wall1->width  = 40000;
+    cloud_wall1->height = 1;
+    cloud_wall1->points.resize (cloud_wall1->width * cloud_wall1->height);
+
+    double tableDistFromWall = 0.05;
+    double variance = 0.02;
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> dis_wall1(0, 5);
+    std::uniform_real_distribution<> disz_wall1(0, 3);
+    std::normal_distribution<> d_wall1(0,variance);
+    for (size_t i = 0; i < cloud_wall1->points.size (); ++i){
+        cloud_wall1->points[i].y = dis_wall1(gen);
+        cloud_wall1->points[i].z = disz_wall1(gen);
+        cloud_wall1->points[i].x = 0;
+        cloud_wall1->points[i].r = 200;
+        cloud_wall1->points[i].g = 200;
+        cloud_wall1->points[i].b = 200;
+    }
+
+    removePart(cloud_wall1, -100, 100, 0, 0.7, 0, 1.0, false);
+    removePart(cloud_wall1, -100, 100, 1.5, 3.5, 0.8, 2.7, false);
+
+    EXX::compression cmprs;
+    cmprs.setRWHullMaxDist(0.02);
+    cmprs.setHULLAlpha(0.07);
+
+    std::vector<PointCloudT::Ptr> plane_vec;
+    plane_vec.push_back(cloud_wall1);
+    std::vector<PointCloudT::Ptr> hulls;
+    cmprs.planeToConcaveHull(&plane_vec, &hulls);
+    std::vector<EXX::densityDescriptor> dDesc;
+    EXX::densityDescriptor dens;
+    dens.rw_max_dist = 0.3;
+    dDesc.push_back(dens);
+    std::vector<PointCloudT::Ptr> simplified_hulls;
+    cmprs.reumannWitkamLineSimplification( &hulls, &simplified_hulls, dDesc);
 
     QuadTreePCL<PointTC> qtpcl(1,10,0,0);
     // qtpcl.setMaxLevel(10);
-    qtpcl.setMaxWidth(0.1);
+    qtpcl.setMaxWidth(1);
+    Eigen::Vector3f normal;
+    normal << 1,0,0;
     qtpcl.setNormal(normal);
-    // result = qtpcl.getNormal();
-    // EXPECT_EQ(true, result == normal);
 
-    PointTC p;
-    p.y = 0; p.r = 255; p.g = 255; p.b = 255;
-    PointCloudTC::Ptr cloud (new PointCloudTC());
-    p.x = 0; p.z = 2;
-    cloud->points.push_back(p);
-    p.x = 0; p.z = 0;
-    cloud->points.push_back(p);
-    p.x = 7; p.z = 0;
-    cloud->points.push_back(p);
-    p.x = 7; p.z = 6;
-    cloud->points.push_back(p);
-    p.x = 0; p.z = 6;
-    cloud->points.push_back(p);
-    p.x = 0; p.z = 3;
-    cloud->points.push_back(p);
-
-    p.x = 2; p.z = 2;
-    cloud->points.push_back(p);
-    p.x = 3; p.z = 1;
-    cloud->points.push_back(p);
-    p.x = 5; p.z = 3;
-    cloud->points.push_back(p);
-    p.x = 4; p.z = 4;
-    cloud->points.push_back(p);
-    p.x = 2; p.z = 3;
-    cloud->points.push_back(p);
-
-    // PointCloudTC::Ptr tmp (new PointCloudTC());
-    // *tmp += *cloud;
-    qtpcl.insertBoundary(cloud);
-
+    qtpcl.insertBoundary(simplified_hulls[0]);
     PointCloudTC::Ptr out (new PointCloudTC());
     std::vector< pcl::Vertices > vertices;
+    std::cout << "hmmm inserted" << std::endl;
     qtpcl.createMesh<PointTC>(out, vertices);
-
-    pcl::Vertices vert;
-    vert.vertices.resize(3);
-    int size = out->size();
-    vert.vertices[0] = size;
-    vert.vertices[1] = size+1;
-    vert.vertices[2] = size+2;
-    vertices.push_back(vert);
-    vert.vertices[0] = size;
-    vert.vertices[1] = size+3;
-    vert.vertices[2] = size+2;
-    vertices.push_back(vert);
-
-    // *out += *tmp;
+    std::cout << "hmmm mesh baddd" << std::endl;
 
 
+    pcl::TextureMesh tMesh;
+    pcl::PolygonMesh pMesh;
+    NormalCloudT::Ptr normals (new NormalCloudT());
+    for (size_t i = 0; i < out->points.size(); i++) {
+        normals->push_back(pcl::Normal(normal[0], normal[1], normal[2]));
+    }
+    std::cout << "hmm push back" << std::endl;
+    pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr outn (new pcl::PointCloud<pcl::PointXYZRGBNormal>);
+    pcl::concatenateFields(*out, *normals, *outn);
+    std::cout << "hmm concatinate" << std::endl;
+    planeDetection::toMeshCloud(*outn, tMesh.cloud);
+    pMesh.cloud = tMesh.cloud;
+    pMesh.polygons = vertices;
+    std::cout << "hmm toMeshCloud" << std::endl;
+    std::vector<std::vector<pcl::Vertices> > vVertices;
+    vVertices.push_back(vertices);
+    tMesh.tex_polygons = vVertices;
+
+    std::string path = "/home/unnar/Desktop/";
+    std::cout << "hmm save" << std::endl;
+    // pcl::io::saveOBJFile(path + "tmesh.obj", tMesh);
     pcl::visualization::PCLVisualizer::Ptr viewer;
     viewer.reset(new pcl::visualization::PCLVisualizer);
     viewer->addPolygonMesh<pcl::PointXYZRGB>(out, vertices);
-    // viewer->addPointCloud<pcl::PointXYZRGB>(out);
+    // viewer->addTextureMesh(tMesh);
+    viewer->addPointCloud<pcl::PointXYZRGB>(simplified_hulls[0]);
     viewer->spin();
+
 }
 
 

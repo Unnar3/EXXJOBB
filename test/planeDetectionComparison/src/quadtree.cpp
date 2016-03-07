@@ -91,9 +91,11 @@ bool QuadTree::insertBoundary(Polygon polygon){
 
 
     if(cellType_ == Parent){
+
         // This cell hasn't been processed
         bool intersect = CGAL::do_intersect(polygon, cell);
         if(intersect){
+
 
             // need to check if cell completely inside polygon
             bool inside = false;

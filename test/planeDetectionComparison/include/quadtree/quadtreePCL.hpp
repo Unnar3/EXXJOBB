@@ -11,6 +11,9 @@ void QuadTreePCL<PointT>::insertBoundary(typename pcl::PointCloud<PointT>::Ptr b
     PointT min, max;
     pcl::getMinMax3D(*boundary, min, max);
 
+    std::cout << "min: " << min << std::endl;
+    std::cout << "max: " << max << std::endl;
+
     if(!inserted_){
         // Determin the inital size of the quadtree
         z_ = boundary->points[0].z;
@@ -18,25 +21,42 @@ void QuadTreePCL<PointT>::insertBoundary(typename pcl::PointCloud<PointT>::Ptr b
         float y = QuadTreePCL<PointT>::roundDown(min.y);
         float width = std::max(QuadTreePCL<PointT>::roundUp(max.x - x), QuadTreePCL<PointT>::roundUp(max.y - y));
 
+        std::cout << "x: " << x << std::endl;
+        std::cout << "y: " << y << std::endl;
+        std::cout << "width: " << width << std::endl;
+
         // initialize the quadtree
         quad = QuadTree(1,width,x,y);
-        quad.setMaxWidth(0.1);
+        quad.setMaxWidth(0.05);
     }
 
     Polygon polygon;
     for (size_t i = 0; i < boundary->size(); i++) {
         polygon.push_back(Point(boundary->points[i].x, boundary->points[i].y));
     }
-    if(!polygon.is_simple()){
-        std::cout << "Polygon isn't simple, returning" << std::endl;
-        return;
-    }
+    std::vector<Polygon> polygons;
+    // if(!polygon.is_simple()){
+    std::cout << "Polygon isn't simple, returning" << std::endl;
+    QuadTreePCL<PointT>::makePolygonSimple(polygon, polygons);
+    polygon = polygons[0];
+        // return;
+    // }
     CGAL::Orientation orientation = polygon.orientation();
     if(orientation == CGAL::NEGATIVE){
         std::cout << "need to invert polygon" << std::endl;
         std::reverse(polygon.vertices_begin(), polygon.vertices_end());
     }
+    std::cout << "inserting" << std::endl;
     quad.insertBoundary(polygon);
+    for(size_t i = 1; i < polygons.size(); ++i){
+        orientation = polygons[i].orientation();
+        if(orientation == CGAL::NEGATIVE){
+            std::cout << "need to invert polygon" << std::endl;
+            std::reverse(polygons[i].vertices_begin(), polygons[i].vertices_end());
+        }
+        quad.insertHole(polygons[i]);
+    }
+    std::cout << "inserted" << std::endl;
     inserted_ = true;
 }
 
@@ -51,7 +71,7 @@ void QuadTreePCL<PointT>::createMesh(typename pcl::PointCloud<T>::Ptr cloud, std
     vertices.reserve(cells.size() * 2);
 
     T p;
-    p.z = 0;
+    p.z = z_;
     pcl::Vertices vert;
     vert.vertices.resize(3);
     for(auto c : cells){
@@ -97,11 +117,6 @@ void QuadTreePCL<PointT>::setNormal(Eigen::Vector3f normal){
     znorm << 0,0,1;
     quaternion_ = Eigen::Quaternion<float>::FromTwoVectors(normal_, znorm);
     normalVectorSet = true;
-
-    std::cout << quaternion_.x() << std::endl;
-    std::cout << quaternion_.y() << std::endl;
-    std::cout << quaternion_.z() << std::endl;
-    std::cout << quaternion_.w() << std::endl;
 }
 
 template <typename PointT>
@@ -127,5 +142,41 @@ void QuadTreePCL<PointT>::rotateFromAxis(typename pcl::PointCloud<PointT>::Ptr c
     // first check if we need to rotate
     Eigen::Affine3f rot(quaternion_.conjugate().matrix());
     pcl::transformPointCloud (*cloud, *cloud, rot);
+
+}
+template <typename PointT>
+bool QuadTreePCL<PointT>::makePolygonSimple(Polygon &polygon, std::vector<Polygon> &polygons){
+
+    float dist_threshold = 0.5*0.5;
+    auto squared_point_distance = [dist_threshold](Point a, Point b){
+        return std::pow((b[0]-a[0]),2) + std::pow((b[1]-a[1]),2) < dist_threshold;
+    };
+
+    // Very stupid test based on distance.
+    int last_idx = 0;
+    for(size_t i = 0; i < polygon.size() - 1; ++i){
+        if( !squared_point_distance(polygon[i], polygon[i+1]) ){
+            std::cout << "distance to great i: " << i << std::endl;
+            std::cout << "point a: " << polygon[i] << std::endl;
+            std::cout << "point b: " << polygon[i+1] << std::endl;
+            if(squared_point_distance(polygon[i], polygon[last_idx])){
+                // we have closed the polygon
+                std::cout << "close to last" << std::endl;
+                Polygon polygon_tmp;
+                for(size_t j = last_idx; j < i+1; ++j){
+                    polygon_tmp.push_back(polygon[j]);
+                }
+                polygons.push_back(polygon_tmp);
+                Polygon hole_tmp;
+                for(size_t j = i+1; j < polygon.size(); ++j){
+                    hole_tmp.push_back(polygon[j]);
+                }
+                polygons.push_back(hole_tmp);
+            }
+        }
+    }
+    if(polygons.size() == 0){
+        polygons.push_back(polygon);
+    }
 
 }
