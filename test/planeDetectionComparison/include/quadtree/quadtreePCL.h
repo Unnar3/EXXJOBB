@@ -42,6 +42,8 @@ private:
     void rotateToAxis(typename pcl::PointCloud<PointT>::Ptr cloud);
     void rotateFromAxis(typename pcl::PointCloud<PointT>::Ptr cloud);
 
+    bool makePolygonSimple(Polygon &polygon, std::vector<Polygon> &polygons);
+
     int roundDown(float toRound){
         int tmp = std::abs(std::floor(toRound));
         if(toRound >= 0){

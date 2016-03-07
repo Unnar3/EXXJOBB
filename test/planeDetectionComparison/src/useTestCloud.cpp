@@ -255,7 +255,7 @@ public:
                 vertices.push_back(vert);
             }
             s = combined->points.size();
-        
+
         }
 
         cloudPublish(combined, vertices);
@@ -352,8 +352,8 @@ private:
                 normals->push_back(crap);
                 continue;
             }
-            vector<int> indices;
-            vector<float> distances;
+            std::vector<int> indices;
+            std::vector<float> distances;
             SurfelT s; s.x = p.x; s.y = p.y; s.z = p.z;
             kdtree.nearestKSearchT(s, 1, indices, distances);
             if (distances.empty()) {
