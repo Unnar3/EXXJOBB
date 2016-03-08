@@ -17,6 +17,9 @@
 #include <planeDetectionComparison/utils.h>
 #include <random>
 #include <sensor_msgs/PointField.h>
+#include <quadtree/saveOBJFile.h>
+#include <locale>
+#include <planeDetectionComparison/utils.h>
 // #include <pcl/pcl_config.h>
 
 // typedef pcl::PointXYZ PointT;
@@ -361,16 +364,16 @@ TEST(QuadTreePCL, testCloud){
     std::uniform_real_distribution<> disz_wall1(0, 3);
     std::normal_distribution<> d_wall1(0,variance);
     for (size_t i = 0; i < cloud_wall1->points.size (); ++i){
-        cloud_wall1->points[i].y = dis_wall1(gen);
+        cloud_wall1->points[i].x = dis_wall1(gen);
         cloud_wall1->points[i].z = disz_wall1(gen);
-        cloud_wall1->points[i].x = 0;
-        cloud_wall1->points[i].r = 200;
-        cloud_wall1->points[i].g = 200;
-        cloud_wall1->points[i].b = 200;
+        cloud_wall1->points[i].y = 0;
+        cloud_wall1->points[i].r = 50*cloud_wall1->points[i].x;
+        cloud_wall1->points[i].g = 50*cloud_wall1->points[i].x;
+        cloud_wall1->points[i].b = 0;
     }
 
-    removePart(cloud_wall1, -100, 100, 0, 0.7, 0, 1.0, false);
-    removePart(cloud_wall1, -100, 100, 1.5, 3.5, 0.8, 2.7, false);
+    removePart(cloud_wall1, 0, 0.7,-100, 100,  0, 1.0, false);
+    removePart(cloud_wall1, 1.5, 3.5,-100, 100,  0.8, 2.7, false);
 
     EXX::compression cmprs;
     cmprs.setRWHullMaxDist(0.02);
@@ -391,44 +394,74 @@ TEST(QuadTreePCL, testCloud){
     // qtpcl.setMaxLevel(10);
     qtpcl.setMaxWidth(1);
     Eigen::Vector3f normal;
-    normal << 1,0,0;
+    normal << 0,1,0;
     qtpcl.setNormal(normal);
 
     qtpcl.insertBoundary(simplified_hulls[0]);
     PointCloudTC::Ptr out (new PointCloudTC());
+
     std::vector< pcl::Vertices > vertices;
-    std::cout << "hmmm inserted" << std::endl;
     qtpcl.createMesh<PointTC>(out, vertices);
-    std::cout << "hmmm mesh baddd" << std::endl;
+    pcl::ModelCoefficients::Ptr coeff (new pcl::ModelCoefficients);
+    coeff->values.resize(3);
+    coeff->values[0] = normal[0]; coeff->values[1] = normal[1]; coeff->values[2] = normal[2];
 
 
-    pcl::TextureMesh tMesh;
-    pcl::PolygonMesh pMesh;
-    NormalCloudT::Ptr normals (new NormalCloudT());
-    for (size_t i = 0; i < out->points.size(); i++) {
-        normals->push_back(pcl::Normal(normal[0], normal[1], normal[2]));
-    }
-    std::cout << "hmm push back" << std::endl;
-    pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr outn (new pcl::PointCloud<pcl::PointXYZRGBNormal>);
-    pcl::concatenateFields(*out, *normals, *outn);
-    std::cout << "hmm concatinate" << std::endl;
-    planeDetection::toMeshCloud(*outn, tMesh.cloud);
-    pMesh.cloud = tMesh.cloud;
-    pMesh.polygons = vertices;
-    std::cout << "hmm toMeshCloud" << std::endl;
-    std::vector<std::vector<pcl::Vertices> > vVertices;
-    vVertices.push_back(vertices);
-    tMesh.tex_polygons = vVertices;
+    cv::Mat image;
+    std::vector<Eigen::Vector2f> vertex_texture;
+    qtpcl.createTexture<PointTC>(cloud_wall1, out, image, vertex_texture);
+
+    objStruct<PointTC> object(1);
+    object.clouds.push_back(out);
+    object.polygons.push_back(vertices);
+    object.images.push_back(image);
+    object.texture_vertices.push_back(vertex_texture);
+    object.coefficients.push_back(coeff);
 
     std::string path = "/home/unnar/Desktop/";
-    std::cout << "hmm save" << std::endl;
-    // pcl::io::saveOBJFile(path + "tmesh.obj", tMesh);
-    pcl::visualization::PCLVisualizer::Ptr viewer;
-    viewer.reset(new pcl::visualization::PCLVisualizer);
-    viewer->addPolygonMesh<pcl::PointXYZRGB>(out, vertices);
-    // viewer->addTextureMesh(tMesh);
-    viewer->addPointCloud<pcl::PointXYZRGB>(simplified_hulls[0]);
-    viewer->spin();
+    cv::imwrite(path + "texture.png", image);
+    std::vector<std::vector<pcl::Vertices> > polygons;
+    polygons.push_back(vertices);
+    std::vector<std::vector<Eigen::Vector2f>> texture_vertices;
+    texture_vertices.push_back(vertex_texture);
+    std::vector<pcl::ModelCoefficients::Ptr> coeffs;
+    coeffs.push_back(coeff);
+    std::vector<pcl::TexMaterial> materials;
+    pcl::TexMaterial tmat;
+    tmat.tex_Ka.r = 0.2f;
+    tmat.tex_Ka.g = 0.2f;
+    tmat.tex_Ka.b = 0.2f;
+
+    tmat.tex_Kd.r = 0.8f;
+    tmat.tex_Kd.g = 0.8f;
+    tmat.tex_Kd.b = 0.8f;
+
+    tmat.tex_Ks.r = 1.0f;
+    tmat.tex_Ks.g = 1.0f;
+    tmat.tex_Ks.b = 1.0f;
+    tmat.tex_d = 1.0f;
+    tmat.tex_Ns = 1.0f;
+    tmat.tex_illum = 2;
+
+    tmat.tex_name = "texture";
+    tmat.tex_file = path + "texture.png";
+    materials.push_back(tmat);
+    saveOBJFile<PointTC>(path + "texture.obj", out, polygons, texture_vertices, coeffs, materials);
+
+
+    // pcl::TextureMesh tmesh;
+    // tmesh.tex_polygons = polygons;
+    // tmesh.tex_coordinates = texture_vertices;
+    // tmesh.tex_materials = materials;
+    // planeDetection::toMeshCloud(*out, tmesh.cloud);
+
+
+
+    // pcl::visualization::PCLVisualizer::Ptr viewer;
+    // viewer.reset(new pcl::visualization::PCLVisualizer);
+    // viewer->addTextureMesh(tmesh);
+    // viewer->addPointCloud<pcl::PointXYZRGB>(out);
+    // viewer->spin();
 
 }
 

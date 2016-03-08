@@ -3,6 +3,7 @@
 
 #include <Eigen/Dense>
 #include "quadtree.h"
+#include <opencv2/opencv.hpp>
 
 
 template <typename PointT>
@@ -30,6 +31,12 @@ public:
     template <typename T>
     void createMesh(typename pcl::PointCloud<T>::Ptr cloud, std::vector< pcl::Vertices > &vertices);
 
+    template <typename T>
+    void createTexture(
+            const typename pcl::PointCloud<T>::Ptr texture_cloud,
+            const typename pcl::PointCloud<T>::Ptr triangle_cloud,
+            cv::Mat &image,
+            std::vector<Eigen::Vector2f> &vertex_texture);
 
     void setNormal(Eigen::Vector3f normal);
     Eigen::Vector3f getNormal(void){ return normal_; }
@@ -40,6 +47,9 @@ public:
 
 private:
     void rotateToAxis(typename pcl::PointCloud<PointT>::Ptr cloud);
+
+    void rotateToAxis(typename pcl::PointCloud<PointT>::Ptr cloud, typename pcl::PointCloud<PointT>::Ptr out);
+
     void rotateFromAxis(typename pcl::PointCloud<PointT>::Ptr cloud);
 
     bool makePolygonSimple(Polygon &polygon, std::vector<Polygon> &polygons);

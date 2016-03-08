@@ -42,9 +42,6 @@ private:
     std::vector<QuadTree> nodes;
 
 private:
-    float x(){ return x_; }
-    float y(){ return y_; }
-    float width(){ return width_; }
     int level(){ return level_; }
     bool useColor(){ return use_color_;}
     bool isLeaf(){ return is_leaf_; }
@@ -71,6 +68,9 @@ public:
     // void setX(float x){ x_ = x; }
     // void setY(float y){ y_ = y; }
     // void setWidth(float width){ width_ = width; }
+    float x(){ return x_; }
+    float y(){ return y_; }
+    float width(){ return width_; }
 
 
 private:
