@@ -27,7 +27,7 @@ void QuadTreePCL<PointT>::insertBoundary(typename pcl::PointCloud<PointT>::Ptr b
 
         // initialize the quadtree
         quad = QuadTree(1,width,x,y);
-        quad.setMaxWidth(0.05);
+        quad.setMaxWidth(0.1);
     }
 
     Polygon polygon;
@@ -133,6 +133,19 @@ void QuadTreePCL<PointT>::rotateToAxis(typename pcl::PointCloud<PointT>::Ptr clo
 }
 
 template <typename PointT>
+void QuadTreePCL<PointT>::rotateToAxis(typename pcl::PointCloud<PointT>::Ptr cloud, typename pcl::PointCloud<PointT>::Ptr out){
+
+    if(quaternion_.x() == 0 &&quaternion_.y() == 0 && quaternion_.z() == 0){
+        // no rotation needed.
+        return;
+    }
+    // first check if we need to rotate
+    Eigen::Affine3f rot(quaternion_.matrix());
+    pcl::transformPointCloud (*cloud, *out, rot);
+
+}
+
+template <typename PointT>
 void QuadTreePCL<PointT>::rotateFromAxis(typename pcl::PointCloud<PointT>::Ptr cloud){
 
     if(quaternion_.x() == 0 &&quaternion_.y() == 0 && quaternion_.z() == 0){
@@ -177,6 +190,53 @@ bool QuadTreePCL<PointT>::makePolygonSimple(Polygon &polygon, std::vector<Polygo
     }
     if(polygons.size() == 0){
         polygons.push_back(polygon);
+    }
+
+}
+
+
+template <typename PointT>
+template <typename T>
+void QuadTreePCL<PointT>::createTexture(
+        const typename pcl::PointCloud<T>::Ptr texture_cloud,
+        const typename pcl::PointCloud<T>::Ptr triangle_cloud,
+        cv::Mat &image,
+        std::vector<Eigen::Vector2f> &vertex_texture){
+
+    float r = 10;
+    typename pcl::PointCloud<T>::Ptr texture_tmp (new pcl::PointCloud<T>);
+    typename pcl::PointCloud<T>::Ptr triangle_tmp (new pcl::PointCloud<T>);
+    rotateToAxis(texture_cloud, texture_tmp);
+    rotateToAxis(triangle_cloud, triangle_tmp);
+
+    image = cv::Mat::zeros(r*quad.width(), r*quad.width(), CV_8UC3); // RGB image
+
+    for(int i  = 0; i < image.rows; ++i){
+        for(int j  = 0; j < image.cols; ++j){
+            image.at<cv::Vec3b>(i, j)[0] = 255;
+            image.at<cv::Vec3b>(i, j)[1] = 0;
+            image.at<cv::Vec3b>(i, j)[2] = 255;
+        }
+    }
+
+    std::cout << "image, rows: " << image.rows <<", cols: " << image.cols << std::endl;
+    std::cout << "quad width: " << quad.width() << std::endl;
+
+    for(auto p : texture_tmp->points){
+        // vertex_texture[i][0] = (p.x - quad.x())/quad.width();
+        // vertex_texture[i][1] = (p.y - quad.y())/quad.width();
+        int x = std::floor( (p.x - quad.x())/quad.width() * image.cols);
+        int y = std::floor( (p.y - quad.y())/quad.width() * image.rows);
+        // std::cout << "x: " << x << ", y: " << y << std::endl;
+        image.at<cv::Vec3b>(image.rows - y - 1, x)[0] = p.b;
+        image.at<cv::Vec3b>(image.rows - y - 1, x)[1] = p.g;
+        image.at<cv::Vec3b>(image.rows - y - 1, x)[2] = p.r;
+    }
+
+    vertex_texture.resize(triangle_tmp->size());
+    for(int i = 0; i < triangle_tmp->size(); ++i){
+        vertex_texture[i][0] = (triangle_tmp->at(i).x - quad.x())/quad.width();
+        vertex_texture[i][1] = (triangle_tmp->at(i).y - quad.y())/quad.width();
     }
 
 }
