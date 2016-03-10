@@ -57,6 +57,7 @@ include(${CGAL_USE_FILE})
 add_executable(comparison src/comparison.cpp)
 target_link_libraries(comparison ${catkin_LIBRARIES} ${QT_LIBRARIES} compression plane_extraction)
 
+
 add_executable(createTestCloud src/createTestCloud.cpp)
 target_link_libraries(createTestCloud ${catkin_LIBRARIES})
 
@@ -68,3 +69,6 @@ target_link_libraries(useTestCloud ${catkin_LIBRARIES} ${CGAL_LIBRARIES} ${CGAL_
 
 add_executable(testQuadTree src/testQuadTree.cpp)
 target_link_libraries(testQuadTree ${catkin_LIBRARIES} ${GTEST_LIBRARIES} quadtreePCL quadtree)
+
+add_executable(testMultiplePlanesQuadtree src/testMultiplePlanesQuadtree.cpp)
+target_link_libraries(testMultiplePlanesQuadtree ${catkin_LIBRARIES} ${QT_LIBRARIES} compression plane_extraction quadtreePCL quadtree)

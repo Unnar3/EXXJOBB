@@ -4,6 +4,7 @@
 #include <Eigen/Dense>
 #include "quadtree.h"
 #include <opencv2/opencv.hpp>
+#include <pcl/ModelCoefficients.h>
 
 
 template <typename PointT>
@@ -39,6 +40,7 @@ public:
             std::vector<Eigen::Vector2f> &vertex_texture);
 
     void setNormal(Eigen::Vector3f normal);
+    void setNormal(pcl::ModelCoefficients::Ptr coeff);
     Eigen::Vector3f getNormal(void){ return normal_; }
 
 
@@ -52,7 +54,7 @@ private:
 
     void rotateFromAxis(typename pcl::PointCloud<PointT>::Ptr cloud);
 
-    bool makePolygonSimple(Polygon &polygon, std::vector<Polygon> &polygons);
+    bool makePolygonSimple(Polygon &polygon, std::vector<Polygon> &polygons, float distance);
 
     int roundDown(float toRound){
         int tmp = std::abs(std::floor(toRound));

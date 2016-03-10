@@ -12,6 +12,7 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/common/common.h>
 #include <exx_compression/compression.h>
+#include <plane_extraction/plane_extraction.h>
 #include <utils/utils.cpp>
 #include <pcl/TextureMesh.h>
 #include <planeDetectionComparison/utils.h>
@@ -375,6 +376,15 @@ TEST(QuadTreePCL, testCloud){
     removePart(cloud_wall1, 0, 0.7,-100, 100,  0, 1.0, false);
     removePart(cloud_wall1, 1.5, 3.5,-100, 100,  0.8, 2.7, false);
 
+
+    // EXX::planeExtraction planeEx;
+    // PointCloudT::Ptr nonPlanar (new PointCloudT());
+    // std::vector<PointCloudT::Ptr> planes;
+    // std::vector<pcl::ModelCoefficients::Ptr> normals;
+    // std::cout << "Efficient PPR..................." << std::endl;
+    // planeEx.planeSegmentationEfficientPPR(cloud_wall1, normals, planes, normals, nonPlanar);
+
+
     EXX::compression cmprs;
     cmprs.setRWHullMaxDist(0.02);
     cmprs.setHULLAlpha(0.07);
@@ -447,7 +457,7 @@ TEST(QuadTreePCL, testCloud){
     tmat.tex_file = path + "texture.png";
     materials.push_back(tmat);
     saveOBJFile<PointTC>(path + "texture.obj", out, polygons, texture_vertices, coeffs, materials);
-
+    saveOBJFile<PointTC>(path + "textureStruct.obj", object, 5);
 
     // pcl::TextureMesh tmesh;
     // tmesh.tex_polygons = polygons;

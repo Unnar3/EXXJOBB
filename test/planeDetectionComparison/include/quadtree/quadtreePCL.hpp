@@ -37,7 +37,7 @@ void QuadTreePCL<PointT>::insertBoundary(typename pcl::PointCloud<PointT>::Ptr b
     std::vector<Polygon> polygons;
     // if(!polygon.is_simple()){
     std::cout << "Polygon isn't simple, returning" << std::endl;
-    QuadTreePCL<PointT>::makePolygonSimple(polygon, polygons);
+    QuadTreePCL<PointT>::makePolygonSimple(polygon, polygons, 0.15);
     polygon = polygons[0];
         // return;
     // }
@@ -102,8 +102,8 @@ void QuadTreePCL<PointT>::createMesh(typename pcl::PointCloud<T>::Ptr cloud, std
         vertices.push_back(vert);
 
         vert.vertices[0] = size;
-        vert.vertices[1] = size + 3;
-        vert.vertices[2] = size + 2;
+        vert.vertices[1] = size + 2;
+        vert.vertices[2] = size + 3;
         vertices.push_back(vert);
 
     }
@@ -113,6 +113,17 @@ void QuadTreePCL<PointT>::createMesh(typename pcl::PointCloud<T>::Ptr cloud, std
 template <typename PointT>
 void QuadTreePCL<PointT>::setNormal(Eigen::Vector3f normal){
     normal_ = normal;
+    Eigen::Vector3f znorm;
+    znorm << 0,0,1;
+    quaternion_ = Eigen::Quaternion<float>::FromTwoVectors(normal_, znorm);
+    normalVectorSet = true;
+}
+
+template <typename PointT>
+void QuadTreePCL<PointT>::setNormal(pcl::ModelCoefficients::Ptr coeff){
+    normal_[0] = coeff->values[0];
+    normal_[1] = coeff->values[1];
+    normal_[2] = coeff->values[2];
     Eigen::Vector3f znorm;
     znorm << 0,0,1;
     quaternion_ = Eigen::Quaternion<float>::FromTwoVectors(normal_, znorm);
@@ -158,39 +169,119 @@ void QuadTreePCL<PointT>::rotateFromAxis(typename pcl::PointCloud<PointT>::Ptr c
 
 }
 template <typename PointT>
-bool QuadTreePCL<PointT>::makePolygonSimple(Polygon &polygon, std::vector<Polygon> &polygons){
+bool QuadTreePCL<PointT>::makePolygonSimple(Polygon &polygon, std::vector<Polygon> &polygons, float distance){
 
-    float dist_threshold = 0.5*0.5;
-    auto squared_point_distance = [dist_threshold](Point a, Point b){
+
+    // Idea:
+    // find the most left/right/top/bottom vertex and start from there, then we are sure that
+    // we start with the external polygon.
+
+    float dist_threshold = distance*distance;
+
+    // Returns true if the distance between a and b is less than dist_threshold.
+    // return |b-a| < dist_threshold.
+    auto squared_point_distance = [](Point a, Point b, float dist_threshold){
         return std::pow((b[0]-a[0]),2) + std::pow((b[1]-a[1]),2) < dist_threshold;
     };
 
-    // Very stupid test based on distance.
-    int last_idx = 0;
-    for(size_t i = 0; i < polygon.size() - 1; ++i){
-        if( !squared_point_distance(polygon[i], polygon[i+1]) ){
-            std::cout << "distance to great i: " << i << std::endl;
-            std::cout << "point a: " << polygon[i] << std::endl;
-            std::cout << "point b: " << polygon[i+1] << std::endl;
-            if(squared_point_distance(polygon[i], polygon[last_idx])){
-                // we have closed the polygon
-                std::cout << "close to last" << std::endl;
-                Polygon polygon_tmp;
-                for(size_t j = last_idx; j < i+1; ++j){
-                    polygon_tmp.push_back(polygon[j]);
+    int start = 0;
+    int stop = polygon.size();
+    bool distance_greater = false;
+
+    while(start != stop){
+        Polygon poly;
+        distance_greater = false;
+        for(int i = start; i < stop; ++i){
+            std::cout << "start: " << start << " stop: " << stop << " i: " << i << std::endl;
+            if(i == stop - 1){
+                // Have traveled the entire polygon. STOP
+                poly.push_back(polygon[i]);
+                polygons.push_back(poly);
+                start = stop;
+                break;
+            }
+            bool close_to_origin = squared_point_distance(polygon[i], polygon[start], dist_threshold);
+
+            // Need to check if we have actually moved further than dist_threshold away from origin.
+            if( !distance_greater && !close_to_origin ){
+                // We have not moved far enough from origin before this check.
+                // The distance to origin is greater than dist_threshold.
+                distance_greater = true;
+                poly.push_back(polygon[i]);
+            }
+
+            // Check if point is very close to the starting point.
+            else if(distance_greater && close_to_origin ){
+                // Possible that we have reached a hole
+                poly.push_back(polygon[i]);
+                // Check if the next point in polygon (i+1) is inside poly
+                // Does not work properly, needs better logic.
+                // if(poly.has_on_bounded_side(polygon[i+1])){
+                //     // The next point is inside poly.
+                //     // i+1 is the start of a hole
+                //     polygons.push_back(poly);
+                //     start = i+1;
+                //     break;
+                // }
+
+                // Simple distance check.
+                if( !squared_point_distance(polygon[i], polygon[i+1], dist_threshold) ){
+                    // Points to far away from each other, was in a hole, probably in external now.
+                    polygons.push_back(poly);
+                    start = i+1;
+                    break;
                 }
-                polygons.push_back(polygon_tmp);
-                Polygon hole_tmp;
-                for(size_t j = i+1; j < polygon.size(); ++j){
-                    hole_tmp.push_back(polygon[j]);
-                }
-                polygons.push_back(hole_tmp);
+
+            } else {
+                // Just a normal point push it back.
+                poly.push_back(polygon[i]);
             }
         }
     }
-    if(polygons.size() == 0){
-        polygons.push_back(polygon);
+
+    // Need to loop over polygons and find polygon with max size and make that external.
+    if(polygons.size() > 0){
+        float max = 0;
+        int max_idx = 0;
+        for(int i = 0; i < polygons.size(); ++i){
+            float tmp_max = std::abs(polygons[i].area());
+            if( tmp_max > max ){
+                max_idx = 0;
+                max = tmp_max;
+            }
+        }
+        if(max_idx != 0){
+            std::cout << "swapping" << std::endl;
+            std::swap(polygons[0], polygons[max_idx]);
+        }
     }
+
+    // Very stupid test based on distance.
+    // int last_idx = 0;
+    // for(size_t i = 0; i < polygon.size() - 1; ++i){
+    //     if( !squared_point_distance(polygon[i], polygon[i+1]) ){
+    //         std::cout << "distance to great i: " << i << std::endl;
+    //         std::cout << "point a: " << polygon[i] << std::endl;
+    //         std::cout << "point b: " << polygon[i+1] << std::endl;
+    //         if(squared_point_distance(polygon[i], polygon[last_idx])){
+    //             // we have closed the polygon
+    //             std::cout << "close to last" << std::endl;
+    //             Polygon polygon_tmp;
+    //             for(size_t j = last_idx; j < i+1; ++j){
+    //                 polygon_tmp.push_back(polygon[j]);
+    //             }
+    //             polygons.push_back(polygon_tmp);
+    //             Polygon hole_tmp;
+    //             for(size_t j = i+1; j < polygon.size(); ++j){
+    //                 hole_tmp.push_back(polygon[j]);
+    //             }
+    //             polygons.push_back(hole_tmp);
+    //         }
+    //     }
+    // }
+    // if(polygons.size() == 0){
+    //     polygons.push_back(polygon);
+    // }
 
 }
 
@@ -211,13 +302,13 @@ void QuadTreePCL<PointT>::createTexture(
 
     image = cv::Mat::zeros(r*quad.width(), r*quad.width(), CV_8UC3); // RGB image
 
-    for(int i  = 0; i < image.rows; ++i){
-        for(int j  = 0; j < image.cols; ++j){
-            image.at<cv::Vec3b>(i, j)[0] = 255;
-            image.at<cv::Vec3b>(i, j)[1] = 0;
-            image.at<cv::Vec3b>(i, j)[2] = 255;
-        }
-    }
+    // for(int i  = 0; i < image.rows; ++i){
+    //     for(int j  = 0; j < image.cols; ++j){
+    //         image.at<cv::Vec3b>(i, j)[0] = 255;
+    //         image.at<cv::Vec3b>(i, j)[1] = 0;
+    //         image.at<cv::Vec3b>(i, j)[2] = 255;
+    //     }
+    // }
 
     std::cout << "image, rows: " << image.rows <<", cols: " << image.cols << std::endl;
     std::cout << "quad width: " << quad.width() << std::endl;
