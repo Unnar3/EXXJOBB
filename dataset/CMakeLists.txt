@@ -37,5 +37,5 @@ target_link_libraries(copy_waypoints ${catkin_LIBRARIES} ${QT_LIBRARIES})
 add_executable(complete_lower src/complete_lower.cpp)
 target_link_libraries(complete_lower ${catkin_LIBRARIES} ${QT_LIBRARIES})
 
-add_executable(image src/image.cpp)
-target_link_libraries(image ${catkin_LIBRARIES} ${QT_LIBRARIES})
+#add_executable(image src/image.cpp)
+#target_link_libraries(image ${catkin_LIBRARIES} ${QT_LIBRARIES})

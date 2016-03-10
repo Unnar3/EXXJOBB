@@ -282,7 +282,6 @@ bool QuadTreePCL<PointT>::makePolygonSimple(Polygon &polygon, std::vector<Polygo
     // if(polygons.size() == 0){
     //     polygons.push_back(polygon);
     // }
-
 }
 
 

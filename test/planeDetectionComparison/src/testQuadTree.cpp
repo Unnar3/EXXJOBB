@@ -376,14 +376,12 @@ TEST(QuadTreePCL, testCloud){
     removePart(cloud_wall1, 0, 0.7,-100, 100,  0, 1.0, false);
     removePart(cloud_wall1, 1.5, 3.5,-100, 100,  0.8, 2.7, false);
 
-
     // EXX::planeExtraction planeEx;
     // PointCloudT::Ptr nonPlanar (new PointCloudT());
     // std::vector<PointCloudT::Ptr> planes;
     // std::vector<pcl::ModelCoefficients::Ptr> normals;
     // std::cout << "Efficient PPR..................." << std::endl;
     // planeEx.planeSegmentationEfficientPPR(cloud_wall1, normals, planes, normals, nonPlanar);
-
 
     EXX::compression cmprs;
     cmprs.setRWHullMaxDist(0.02);
